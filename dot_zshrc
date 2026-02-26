@@ -277,4 +277,83 @@ gemini()        { command gemini "$@" }
 
 # Dotfiles sync
 alias dotfiles-push='cd ~/.local/share/chezmoi && git add -A && git commit -m "update dotfiles" && git push && cd -'
-alias dotfiles-pull='chezmoi update'
+dotfiles-pull() {
+  local chezmoi_dir="$HOME/.local/share/chezmoi"
+
+  echo "\n🔄 Syncing dotfiles...\n"
+
+  # Step 1: Capture any local file edits into the chezmoi source
+  echo "  📋 Capturing local changes..."
+  chezmoi re-add
+
+  # Step 2: Commit local changes so git has something to merge against
+  if ! git -C "$chezmoi_dir" diff --quiet HEAD 2>/dev/null || \
+     ! git -C "$chezmoi_dir" diff --cached --quiet 2>/dev/null; then
+    git -C "$chezmoi_dir" add -A
+    git -C "$chezmoi_dir" commit -m "sync: local changes" --quiet
+    echo "  ✓ Local changes committed"
+  else
+    echo "  ✓ No new local changes to commit"
+  fi
+
+  # Step 3: Pull from GitHub
+  echo "\n  ⬇️  Pulling from GitHub..."
+  if ! git -C "$chezmoi_dir" pull --no-rebase 2>&1; then
+
+    # Detect conflict files
+    local conflicts
+    conflicts=($(git -C "$chezmoi_dir" diff --name-only --diff-filter=U 2>/dev/null))
+
+    if [[ ${#conflicts[@]} -gt 0 ]]; then
+      echo "\n  ⚠️  Merge conflicts detected in:"
+      for f in $conflicts; do echo "      - $f"; done
+
+      for f in $conflicts; do
+        echo "\n  Conflict in: $f"
+        echo "    1) Keep my local changes"
+        echo "    2) Use GitHub (remote) changes"
+        echo "    3) Open \$EDITOR to resolve manually"
+        local choice
+        read "choice?  Enter choice (1/2/3): "
+        case "$choice" in
+          1)
+            git -C "$chezmoi_dir" checkout --ours -- "$f"
+            git -C "$chezmoi_dir" add "$f"
+            echo "  ✓ Kept local changes for $f"
+            ;;
+          2)
+            git -C "$chezmoi_dir" checkout --theirs -- "$f"
+            git -C "$chezmoi_dir" add "$f"
+            echo "  ✓ Used remote changes for $f"
+            ;;
+          3)
+            ${EDITOR:-nano} "$chezmoi_dir/$f"
+            git -C "$chezmoi_dir" add "$f"
+            echo "  ✓ Manually resolved $f"
+            ;;
+          *)
+            echo "  ⚠️  Invalid choice — keeping local changes for $f"
+            git -C "$chezmoi_dir" checkout --ours -- "$f"
+            git -C "$chezmoi_dir" add "$f"
+            ;;
+        esac
+      done
+
+      git -C "$chezmoi_dir" commit -m "sync: resolve merge conflicts" --quiet
+      echo "\n  ✓ Conflicts resolved"
+    else
+      echo "  ✗ Pull failed for an unexpected reason — aborting"
+      return 1
+    fi
+  fi
+
+  # Step 4: Apply merged source to local files
+  echo "\n  ✅ Applying changes to local files..."
+  chezmoi apply
+
+  # Step 5: Push to GitHub
+  echo "\n  ⬆️  Pushing to GitHub..."
+  git -C "$chezmoi_dir" push
+
+  echo "\n  ✓ Dotfiles synced!\n"
+}
