@@ -193,6 +193,14 @@ update-apps() {
   fi
 
   echo "\n✅ All updates complete!"
+
+  # dotfiles — sync latest from GitHub
+  if command -v chezmoi &>/dev/null; then
+    echo "\n📦 dotfiles — syncing from GitHub..."
+    chezmoi update && echo "  ✓ dotfiles up to date"
+  fi
+
+  echo "\n✅ All updates complete!"
 }
 
 # journal
