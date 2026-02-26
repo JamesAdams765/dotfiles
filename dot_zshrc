@@ -249,3 +249,7 @@ fi
 # AI assistants
 copilot()       { command copilot "$@" }
 gemini()        { command gemini "$@" }
+
+# Dotfiles sync
+alias dotfiles-push='cd ~/.local/share/chezmoi && git add -A && git commit -m "update dotfiles" && git push && cd -'
+alias dotfiles-pull='chezmoi update'
