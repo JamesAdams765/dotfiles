@@ -75,6 +75,7 @@ commands() {
     "network"               "🔌  network monitor (bottom)" \
     "rss"                   "📰  RSS feed reader (newsboat)" \
     "storage"               "💾  disk usage analyzer (ncdu)" \
+    "backlog"               "📋  markdown kanban board (backlog.md)" \
     "tasks"                 "✅  task manager (select project)" \
     "update-apps"           "⬆️   update all installed apps" \
     "weather"               "🌤️   show current weather" \
@@ -224,6 +225,9 @@ alias journal-work='tjournal -j ~/.tjournal/work/work.json'
 alias journal-dev='tjournal -j ~/.tjournal/dev/dev.json'
 alias journal-data-platform='tjournal -j ~/.tjournal/data-platform/data-platform.json'
 
+# backlog
+backlog()       { _ensure backlog "brew install backlog-md" "npm install -g backlog-md" && command backlog }
+
 # tasks
 tasks() {
   local db
@@ -280,22 +284,8 @@ dotfiles() {
 
   echo "\n🔄 Syncing dotfiles...\n"
 
-  # Step 1: Capture any local file edits into the chezmoi source
-  echo "  📋 Capturing local changes..."
-  chezmoi re-add
-
-  # Step 2: Commit local changes so git has something to merge against
-  if ! git -C "$chezmoi_dir" diff --quiet HEAD 2>/dev/null || \
-     ! git -C "$chezmoi_dir" diff --cached --quiet 2>/dev/null; then
-    git -C "$chezmoi_dir" add -A
-    git -C "$chezmoi_dir" commit -m "sync: local changes" --quiet
-    echo "  ✓ Local changes committed"
-  else
-    echo "  ✓ No new local changes to commit"
-  fi
-
-  # Step 3: Pull from GitHub
-  echo "\n  ⬇️  Pulling from GitHub..."
+  # Step 1: Pull from GitHub first (so remote additions aren't lost)
+  echo "  ⬇️  Pulling from GitHub..."
   if ! git -C "$chezmoi_dir" pull --no-rebase 2>&1; then
 
     # Detect conflict files
@@ -345,13 +335,25 @@ dotfiles() {
     fi
   fi
 
-  # Step 4: Apply merged source to local files
+  # Step 2: Apply pulled source to local files
   echo "\n  ✅ Applying changes to local files..."
   chezmoi apply
 
-  # Step 5: Push to GitHub
-  echo "\n  ⬆️  Pushing to GitHub..."
-  git -C "$chezmoi_dir" push
+  # Step 3: Capture any local edits made on top of the pulled version
+  echo "\n  📋 Capturing local changes..."
+  chezmoi re-add
+
+  # Step 4: Commit and push if anything changed
+  if ! git -C "$chezmoi_dir" diff --quiet HEAD 2>/dev/null || \
+     ! git -C "$chezmoi_dir" diff --cached --quiet 2>/dev/null; then
+    git -C "$chezmoi_dir" add -A
+    git -C "$chezmoi_dir" commit -m "sync: local changes" --quiet
+    echo "  ✓ Local changes committed"
+    echo "\n  ⬆️  Pushing to GitHub..."
+    git -C "$chezmoi_dir" push
+  else
+    echo "  ✓ No new local changes to push"
+  fi
 
   echo "\n  ✓ Dotfiles synced!\n"
 }
