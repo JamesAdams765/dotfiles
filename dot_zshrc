@@ -76,6 +76,7 @@ commands() {
     "network"               "🔌  network monitor (bottom)" \
     "rss"                   "📰  RSS feed reader (newsboat)" \
     "storage"               "💾  disk usage analyzer (ncdu)" \
+    "backlog"               "📋  view backlog" \
     "tasks"                 "✅  task manager (select project)" \
     "update-apps"           "⬆️   update all installed apps" \
     "weather"               "🌤️   show current weather" \
@@ -224,6 +225,9 @@ alias journal-architecture='tjournal -j ~/.tjournal/architecture/architecture.js
 alias journal-work='tjournal -j ~/.tjournal/work/work.json'
 alias journal-dev='tjournal -j ~/.tjournal/dev/dev.json'
 alias journal-data-platform='tjournal -j ~/.tjournal/data-platform/data-platform.json'
+
+# backlog
+backlog()       { _ensure geek-life "go install github.com/ajaxray/geek-life@latest" "go install github.com/ajaxray/geek-life@latest" && geek-life --db-file "$HOME/.geek-life-backlog.db" }
 
 # tasks
 tasks() {
