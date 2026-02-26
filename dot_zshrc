@@ -194,10 +194,20 @@ update-apps() {
 
   echo "\n✅ All updates complete!"
 
-  # dotfiles — sync latest from GitHub
+  # dotfiles — install chezmoi if missing, then sync from GitHub
+  echo "\n📦 dotfiles — syncing from GitHub..."
+  if ! command -v chezmoi &>/dev/null; then
+    echo "  chezmoi not found — installing..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      brew install chezmoi
+    else
+      sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+    fi
+  fi
   if command -v chezmoi &>/dev/null; then
-    echo "\n📦 dotfiles — syncing from GitHub..."
     chezmoi update && echo "  ✓ dotfiles up to date"
+  else
+    echo "  ⚠️  chezmoi install failed — skipping dotfiles sync"
   fi
 
   echo "\n✅ All updates complete!"
