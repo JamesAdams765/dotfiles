@@ -75,6 +75,7 @@ commands() {
     "network"               "🔌  network monitor (bottom)" \
     "rss"                   "📰  RSS feed reader (newsboat)" \
     "storage"               "💾  disk usage analyzer (ncdu)" \
+    "backlog"               "📋  markdown kanban board (backlog.md)" \
     "tasks"                 "✅  task manager (select project)" \
     "update-apps"           "⬆️   update all installed apps" \
     "weather"               "🌤️   show current weather" \
@@ -223,6 +224,9 @@ alias journal-architecture='tjournal -j ~/.tjournal/architecture/architecture.js
 alias journal-work='tjournal -j ~/.tjournal/work/work.json'
 alias journal-dev='tjournal -j ~/.tjournal/dev/dev.json'
 alias journal-data-platform='tjournal -j ~/.tjournal/data-platform/data-platform.json'
+
+# backlog
+backlog()       { _ensure backlog "brew install backlog-md" "npm install -g backlog-md" && backlog }
 
 # tasks
 tasks() {
