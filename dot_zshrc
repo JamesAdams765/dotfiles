@@ -75,7 +75,6 @@ commands() {
     "network"               "🔌  network monitor (bottom)" \
     "rss"                   "📰  RSS feed reader (newsboat)" \
     "storage"               "💾  disk usage analyzer (ncdu)" \
-    "backlog"               "📋  view backlog" \
     "tasks"                 "✅  task manager (select project)" \
     "update-apps"           "⬆️   update all installed apps" \
     "weather"               "🌤️   show current weather" \
@@ -114,9 +113,9 @@ alias freememory='sync; echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null &
 calendar()      { _ensure calcure "pipx install calcure" "pipx install calcure" && calcure }
 alias refresh='exec zsh -l'
 network()       { _ensure btm "brew install bottom" "snap install bottom" && btm }
-gping()         { _ensure gping "brew install gping" "cargo install gping" && command gping "$@" }
+gping()         { _ensure gping "brew install gping" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install gping" && command gping "$@" }
 computer()      { _ensure neofetch "brew install neofetch" "sudo apt-get install -y neofetch" && neofetch }
-music()         { _ensure musictui "brew install musictui" "cargo install termusic" && musictui }
+music()         { _ensure musictui "brew install musictui" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install termusic" && musictui }
 
 # update-apps
 update-apps() {
@@ -218,15 +217,12 @@ journal() {
   local j
   j=$(printf "architecture\nwork\ndev\ndata-platform\n" \
     | fzf --prompt="Select Journal: " --height=~8 --layout=reverse --border --no-sort)
-  [[ -n "$j" ]] && _ensure tjournal "brew install tjournal" "cargo install tjournal" && tjournal -j "$HOME/.tjournal/$j/$j.json"
+  [[ -n "$j" ]] && _ensure tjournal "brew install tjournal" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install tui-journal" && tjournal -j "$HOME/.tjournal/$j/$j.json"
 }
 alias journal-architecture='tjournal -j ~/.tjournal/architecture/architecture.json'
 alias journal-work='tjournal -j ~/.tjournal/work/work.json'
 alias journal-dev='tjournal -j ~/.tjournal/dev/dev.json'
 alias journal-data-platform='tjournal -j ~/.tjournal/data-platform/data-platform.json'
-
-# backlog
-backlog()       { _ensure geek-life "go install github.com/ajaxray/geek-life@latest" "go install github.com/ajaxray/geek-life@latest" && geek-life --db-file "$HOME/.geek-life-backlog.db" }
 
 # tasks
 tasks() {
@@ -261,6 +257,10 @@ export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 
 # Local bin
 export PATH="$HOME/.local/bin:$PATH"
+
+# Rust / cargo
+[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+export PATH="$HOME/.cargo/bin:$PATH"
 
 # LM Studio CLI (lms)
 export PATH="$PATH:$HOME/.lmstudio/bin"
