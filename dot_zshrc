@@ -54,6 +54,7 @@ commands() {
     "computer"              "🖥️   show system info (neofetch)" \
     "dotfiles"              "🔄  sync dotfiles with GitHub (push + pull)" \
     "dotfiles-auth"         "🔑  one-time GitHub auth for dotfiles sync" \
+    "dotfiles-force"        "☁️   force overwrite local dotfiles from GitHub" \
     "copilot"               "🤖  GitHub Copilot AI assistant" \
     "edit-commands"         "✏️   edit this .zshrc file" \
     "email"                 "📧  open email client (neomutt)" \
@@ -366,4 +367,13 @@ dotfiles() {
   fi
 
   echo "\n  ✓ Dotfiles synced!\n"
+}
+
+dotfiles-force() {
+  local chezmoi_dir="$HOME/.local/share/chezmoi"
+  echo "\n⚠️  Force override: discarding local changes and pulling from GitHub...\n"
+  git -C "$chezmoi_dir" fetch origin
+  git -C "$chezmoi_dir" reset --hard origin/master
+  chezmoi apply
+  echo "\n  ✓ Dotfiles force-synced from GitHub!\n"
 }
