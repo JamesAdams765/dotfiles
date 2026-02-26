@@ -52,9 +52,8 @@ commands() {
   cmd=$(printf "%-24s %s\n" \
     "calendar"              "📅  manage calendar events" \
     "computer"              "🖥️   show system info (neofetch)" \
+    "dotfiles"              "🔄  sync dotfiles with GitHub (push + pull)" \
     "dotfiles-auth"         "🔑  one-time GitHub auth for dotfiles sync" \
-    "dotfiles-pull"         "⬇️   pull & apply dotfiles from GitHub" \
-    "dotfiles-push"         "⬆️   push dotfile changes to GitHub" \
     "copilot"               "🤖  GitHub Copilot AI assistant" \
     "edit-commands"         "✏️   edit this .zshrc file" \
     "email"                 "📧  open email client (neomutt)" \
@@ -276,8 +275,7 @@ copilot()       { command copilot "$@" }
 gemini()        { command gemini "$@" }
 
 # Dotfiles sync
-alias dotfiles-push='cd ~/.local/share/chezmoi && git add -A && git commit -m "update dotfiles" && git push && cd -'
-dotfiles-pull() {
+dotfiles() {
   local chezmoi_dir="$HOME/.local/share/chezmoi"
 
   echo "\n🔄 Syncing dotfiles...\n"
