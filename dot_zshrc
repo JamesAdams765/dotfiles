@@ -282,6 +282,16 @@ gemini()        { command gemini "$@" }
 dotfiles() {
   local chezmoi_dir="$HOME/.local/share/chezmoi"
 
+  # Force override: pull cloud version and discard all local changes
+  if [[ "$1" == "--force" || "$1" == "-f" ]]; then
+    echo "\n⚠️  Force override: discarding local changes and pulling from GitHub...\n"
+    git -C "$chezmoi_dir" fetch origin
+    git -C "$chezmoi_dir" reset --hard origin/master
+    chezmoi apply
+    echo "\n  ✓ Dotfiles force-synced from GitHub!\n"
+    return 0
+  fi
+
   echo "\n🔄 Syncing dotfiles...\n"
 
   # Step 1: Pull from GitHub first (so remote additions aren't lost)
