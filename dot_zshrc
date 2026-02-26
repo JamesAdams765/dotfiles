@@ -52,6 +52,9 @@ commands() {
   cmd=$(printf "%-24s %s\n" \
     "calendar"              "📅  manage calendar events" \
     "computer"              "🖥️   show system info (neofetch)" \
+    "dotfiles-auth"         "🔑  one-time GitHub auth for dotfiles sync" \
+    "dotfiles-pull"         "⬇️   pull & apply dotfiles from GitHub" \
+    "dotfiles-push"         "⬆️   push dotfile changes to GitHub" \
     "copilot"               "🤖  GitHub Copilot AI assistant" \
     "edit-commands"         "✏️   edit this .zshrc file" \
     "email"                 "📧  open email client (neomutt)" \
