@@ -1,0 +1,5 @@
+[user]
+	name = James Adams
+	email = JamesAdams765@users.noreply.github.com
+[credential]
+	helper = store
