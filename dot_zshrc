@@ -226,7 +226,7 @@ alias journal-dev='tjournal -j ~/.tjournal/dev/dev.json'
 alias journal-data-platform='tjournal -j ~/.tjournal/data-platform/data-platform.json'
 
 # backlog
-backlog()       { _ensure backlog "brew install backlog-md" "npm install -g backlog-md" && backlog }
+backlog()       { _ensure backlog "brew install backlog-md" "npm install -g backlog-md" && command backlog }
 
 # tasks
 tasks() {
