@@ -53,8 +53,9 @@ commands() {
     "calendar"              "📅  manage calendar events" \
     "computer"              "🖥️   show system info (neofetch)" \
     "dotfiles"              "🔄  sync dotfiles with GitHub (push + pull)" \
-    "dotfiles-auth"         "🔑  one-time GitHub auth for dotfiles sync" \
-    "dotfiles-force"        "☁️   force overwrite local dotfiles from GitHub" \
+    "dotfiles-auth"                  "🔑  one-time GitHub auth for dotfiles sync" \
+    "dotfiles-force"                 "☁️   force overwrite local dotfiles from GitHub" \
+    "dotfiles-force-override-cloud"  "⬆️   force push local dotfiles to GitHub (overwrite cloud)" \
     "copilot"               "🤖  GitHub Copilot AI assistant" \
     "edit-commands"         "✏️   edit this .zshrc file" \
     "email"                 "📧  open email client (neomutt)" \
@@ -376,4 +377,14 @@ dotfiles-force() {
   git -C "$chezmoi_dir" reset --hard origin/master
   chezmoi apply
   echo "\n  ✓ Dotfiles force-synced from GitHub!\n"
+}
+
+dotfiles-force-override-cloud() {
+  local chezmoi_dir="$HOME/.local/share/chezmoi"
+  echo "\n⚠️  Force push: overwriting GitHub with local dotfiles...\n"
+  chezmoi re-add
+  git -C "$chezmoi_dir" add -A
+  git -C "$chezmoi_dir" commit -m "sync: force override cloud with local changes" --quiet
+  git -C "$chezmoi_dir" push --force
+  echo "\n  ✓ GitHub dotfiles overwritten with local version!\n"
 }
