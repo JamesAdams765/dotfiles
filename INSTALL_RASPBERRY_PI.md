@@ -16,7 +16,7 @@ The installation script automatically:
 
 1. ✓ **Detects your OS** - Identifies Raspberry Pi (ARM/ARM64)
 2. ✓ **Installs core dependencies** - curl, git, zsh
-3. ✓ **Installs optional tools** - fzf (for menu system)
+3. ✓ **Installs optional tools** - fzf (for menu system), Node.js, npm
 4. ✓ **Installs chezmoi** - Dotfiles manager
 5. ✓ **Clones dotfiles** - From GitHub
 6. ✓ **Installs Oh My Zsh** - Shell framework
@@ -88,27 +88,36 @@ useful-aliases
 
 ### AI Assistant Commands (copilot, gemini) fail to install
 
-If these commands fail, it's likely because npm/Node.js is not properly installed, or pipx is not available.
+If these commands fail, it's likely because npm/Node.js is not properly installed.
 
 **Solution:**
 ```bash
-# Check if npm is installed
-npm --version
+# Check if Node.js is installed
+node --version
 
-# If not, install Node.js
+# If not, the install script should have installed it:
 sudo apt-get install -y nodejs npm
+
+# Verify npm is available
+npm --version
 
 # The copilot and gemini functions will auto-install on first use
 copilot "your question here"
 ```
 
-If Node.js is not available on your Raspberry Pi:
+If you need a newer version of Node.js than what's in the repo:
 ```bash
-# Install nvm (Node Version Manager) for more reliable Node.js
+# Install nvm (Node Version Manager) for better Node.js management
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Reload shell
+exec zsh
 
 # Then install Node.js LTS
 nvm install --lts
+
+# Verify
+npm --version
 ```
 
 ### Oh My Zsh installation failed
