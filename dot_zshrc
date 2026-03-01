@@ -827,8 +827,19 @@ fi
 # GitHub Copilot and Google Gemini wrappers
 ################################################################################
 
-copilot() { command copilot "$@" }
-gemini()  { command gemini "$@" }
+copilot() {
+  _ensure copilot \
+    "npm install -g @github/copilot" \
+    "npm install -g @github/copilot"
+  command copilot "$@"
+}
+
+gemini() {
+  _ensure gemini \
+    "npm install -g @google/generative-ai" \
+    "npm install -g @google/generative-ai"
+  command gemini "$@"
+}
 
 ################################################################################
 # DOTFILES MANAGEMENT
