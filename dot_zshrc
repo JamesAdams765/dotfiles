@@ -289,37 +289,20 @@ _ensure() {
       echo "   https://brew.sh"
       return 1
     fi
-    if eval "$macos_cmd" 2>&1; then
-      # Success
-      true
-    else
-      local err=$?
+    eval "$macos_cmd"
+    local err=$?
+    if [[ $err -ne 0 ]]; then
       echo "❌ Installation failed with error code $err"
       return $err
     fi
   else
     # Linux (Ubuntu, Debian, etc.)
-    # Show output for npm installs to help debug
-    if [[ "$cmd" == "copilot" || "$cmd" == "gemini" ]]; then
-      # For AI assistants, show npm output
-      if eval "$linux_cmd"; then
-        # Success
-        true
-      else
-        local err=$?
-        echo "❌ Installation failed with error code $err"
-        return $err
-      fi
-    else
-      # For other tools, suppress output
-      if eval "$linux_cmd" >/dev/null 2>&1; then
-        # Success
-        true
-      else
-        local err=$?
-        echo "❌ Installation failed with error code $err"
-        return $err
-      fi
+    # Always show output to help debug npm issues
+    eval "$linux_cmd"
+    local err=$?
+    if [[ $err -ne 0 ]]; then
+      echo "❌ Installation command failed with error code $err"
+      return $err
     fi
   fi
   
@@ -328,8 +311,9 @@ _ensure() {
     echo "✅ Successfully installed '$cmd'"
     return 0
   else
-    echo "❌ Failed to install '$cmd' — command not found in PATH"
-    echo "   Try installing manually: $linux_cmd"
+    echo "❌ Failed to install '$cmd' — command not found in PATH after installation"
+    echo "   Try checking: npm list -g | grep $cmd"
+    echo "   Or install manually: npm install -g @github/copilot"
     return 1
   fi
 }
