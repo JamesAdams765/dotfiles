@@ -86,6 +86,31 @@ sudo apt-get install -y fzf
 useful-aliases
 ```
 
+### AI Assistant Commands (copilot, gemini) fail to install
+
+If these commands fail, it's likely because npm/Node.js is not properly installed, or pipx is not available.
+
+**Solution:**
+```bash
+# Check if npm is installed
+npm --version
+
+# If not, install Node.js
+sudo apt-get install -y nodejs npm
+
+# The copilot and gemini functions will auto-install on first use
+copilot "your question here"
+```
+
+If Node.js is not available on your Raspberry Pi:
+```bash
+# Install nvm (Node Version Manager) for more reliable Node.js
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Then install Node.js LTS
+nvm install --lts
+```
+
 ### Oh My Zsh installation failed
 
 If the install script shows warnings about Oh My Zsh, you can install it manually:
@@ -119,6 +144,19 @@ Some systems require sudo. The script tries this automatically, but if it fails:
 
 ```bash
 sudo chsh -s $(which zsh) $USER
+```
+
+### Auto-install failures for optional tools
+
+Tools like yazi, btop, or ncdu may fail to install on some Raspberry Pi configurations. This is non-critical - they'll be installed on-demand when you first use them.
+
+**Example:**
+```bash
+# First time you run this:
+storage  # This will attempt to install ncdu
+
+# If it fails, you can install manually:
+sudo apt-get install -y ncdu
 ```
 
 ## Manual Installation

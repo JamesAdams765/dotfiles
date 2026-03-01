@@ -131,6 +131,8 @@ Type `commands` to see all available utilities with descriptions:
 - `lazyssh` - SSH connection manager
 - `repos` - Check git repository status
 - `config` - Edit and reload .zshrc
+- `copilot` - GitHub Copilot AI assistant (auto-installs)
+- `gemini` - Google Gemini AI assistant (auto-installs)
 
 ### Terminal Applications
 - `weather` - Current weather
