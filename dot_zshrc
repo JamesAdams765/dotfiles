@@ -435,9 +435,10 @@ files() {
       "brew install yazi"  # Fallback is same for macOS
   else
     # Linux with architecture-specific binary
+    # First try pre-compiled binary, fall back to building from source if glibc version incompatible
     _ensure yazi \
       "brew install yazi" \
-      "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-${yazi_target}.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-${yazi_target}/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst"
+      "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-${yazi_target}.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-${yazi_target}/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst || (echo '⚠️  Pre-compiled binary incompatible, building from source...' && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install --locked yazi-fm)"
   fi
   
   yazi
