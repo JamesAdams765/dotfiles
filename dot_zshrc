@@ -417,6 +417,17 @@ files() {
       ;;
   esac
   
+  # If yazi exists but is not in PATH or wrong binary, remove it
+  # This handles cases where old incompatible binaries are installed
+  if command -v yazi &>/dev/null; then
+    local yazi_path=$(command -v yazi)
+    # Check if it's an x86_64 binary on ARM or vice versa (will fail to execute)
+    if ! "$yazi_path" --version &>/dev/null 2>&1; then
+      echo "⚠️  Removing incompatible yazi binary at $yazi_path..."
+      sudo rm -f "$yazi_path" 2>/dev/null || rm -f "$yazi_path"
+    fi
+  fi
+  
   # Set up the installation commands based on target
   if [[ "$yazi_target" == "homebrew" ]]; then
     _ensure yazi \
