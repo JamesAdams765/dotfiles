@@ -871,11 +871,8 @@ copilot() {
   fi
   
   if [[ $# -eq 0 ]]; then
-    # No arguments - prompt user interactively
-    echo "🤖 GitHub Copilot AI Assistant"
-    echo ""
-    # Use copilot's interactive mode directly
-    command copilot -i
+    # No arguments - start copilot in interactive mode
+    command copilot
   else
     # With arguments - treat as prompt text
     echo "Running: copilot -p \"$*\""
