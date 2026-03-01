@@ -856,8 +856,6 @@ copilot() {
   fi
   
   # Try to ensure copilot is installed
-  # First try with user npm (configured by install script)
-  # If that fails, try with sudo
   if ! _ensure copilot \
     "npm install -g @github/copilot || sudo npm install -g @github/copilot" \
     "npm install -g @github/copilot || sudo npm install -g @github/copilot"; then
@@ -870,15 +868,17 @@ copilot() {
   fi
   
   if [[ $# -eq 0 ]]; then
-    # No arguments - prompt user
+    # No arguments - prompt user interactively
     echo "🤖 GitHub Copilot AI Assistant"
     echo ""
-    read "prompt?Ask Copilot (or press Ctrl+C to exit): "
+    read -r prompt "Ask Copilot (or press Ctrl+C to exit): "
     if [[ -n "$prompt" ]]; then
+      echo "Running: copilot -p \"$prompt\""
       command copilot -p "$prompt"
     fi
   else
     # With arguments - treat as prompt text
+    echo "Running: copilot -p \"$*\""
     command copilot -p "$*"
   fi
 }
@@ -899,8 +899,6 @@ gemini() {
   fi
   
   # Try to ensure gemini is installed
-  # First try with user npm (configured by install script)
-  # If that fails, try with sudo
   if ! _ensure gemini \
     "npm install -g @google/generative-ai || sudo npm install -g @google/generative-ai" \
     "npm install -g @google/generative-ai || sudo npm install -g @google/generative-ai"; then
@@ -920,6 +918,7 @@ gemini() {
     echo "Example: gemini 'What is the capital of France?'"
   else
     # With arguments - treat as prompt/command
+    echo "Running: gemini \"$*\""
     command gemini "$*"
   fi
 }
