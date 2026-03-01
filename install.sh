@@ -61,7 +61,7 @@ install_dependencies() {
   done
   
   # Install optional but recommended packages
-  local optional_packages=("fzf" "build-essential" "curl")
+  local optional_packages=("fzf" "build-essential" "curl" "nodejs" "npm")
   for pkg in "${optional_packages[@]}"; do
     if ! command -v "$pkg" &>/dev/null && ! dpkg -l 2>/dev/null | grep -q "^ii.*$pkg"; then
       echo "  → Installing $pkg..."

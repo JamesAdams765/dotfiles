@@ -828,17 +828,67 @@ fi
 ################################################################################
 
 copilot() {
+  # Check if npm is available first
+  if ! command -v npm &>/dev/null; then
+    echo "❌ npm is required for GitHub Copilot but is not installed"
+    echo ""
+    echo "Install it with:"
+    echo "  Ubuntu/Raspberry Pi: sudo apt-get install -y nodejs npm"
+    echo "  macOS: brew install node"
+    echo ""
+    echo "Or install nvm (Node Version Manager):"
+    echo "  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
+    echo "  nvm install --lts"
+    return 1
+  fi
+  
   _ensure copilot \
     "npm install -g @github/copilot" \
     "npm install -g @github/copilot"
-  command copilot "$@"
+  
+  if [[ $# -eq 0 ]]; then
+    # No arguments - prompt user
+    echo "🤖 GitHub Copilot AI Assistant"
+    echo ""
+    read "prompt?Ask Copilot (or press Ctrl+C to exit): "
+    if [[ -n "$prompt" ]]; then
+      command copilot -p "$prompt"
+    fi
+  else
+    # With arguments - pass them through
+    command copilot "$@"
+  fi
 }
 
 gemini() {
+  # Check if npm is available first
+  if ! command -v npm &>/dev/null; then
+    echo "❌ npm is required for Google Gemini but is not installed"
+    echo ""
+    echo "Install it with:"
+    echo "  Ubuntu/Raspberry Pi: sudo apt-get install -y nodejs npm"
+    echo "  macOS: brew install node"
+    echo ""
+    echo "Or install nvm (Node Version Manager):"
+    echo "  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
+    echo "  nvm install --lts"
+    return 1
+  fi
+  
   _ensure gemini \
     "npm install -g @google/generative-ai" \
     "npm install -g @google/generative-ai"
-  command gemini "$@"
+  
+  if [[ $# -eq 0 ]]; then
+    # No arguments - show interactive help
+    echo "✨ Google Gemini AI Assistant"
+    echo ""
+    echo "Usage: gemini [command] [options]"
+    echo "Run 'gemini --help' for more information"
+  else
+    # With arguments - pass them through
+    command gemini "$@"
+  fi
 }
 
 ################################################################################
