@@ -473,7 +473,7 @@ files() {
           source ~/.cargo/env
         fi
         
-        if cargo install --locked yazi-fm; then
+        if cargo install --force yazi-build; then
           echo "✅ yazi built and installed successfully from source"
           yazi_works=true
         else
