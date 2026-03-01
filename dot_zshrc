@@ -378,9 +378,28 @@ memory() {
 
 # File browser (yazi is a Rust-based file manager)
 files() {
+  # Detect system architecture for yazi download
+  local arch=$(uname -m)
+  local yazi_arch
+  case "$arch" in
+    x86_64)
+      yazi_arch="x86_64-unknown-linux-gnu"
+      ;;
+    aarch64|arm64)
+      yazi_arch="aarch64-unknown-linux-gnu"
+      ;;
+    armv7l)
+      yazi_arch="armv7-unknown-linux-gnueabihf"
+      ;;
+    *)
+      echo "❌ Unsupported architecture: $arch"
+      return 1
+      ;;
+  esac
+  
   _ensure yazi \
     "brew install yazi" \
-    "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-x86_64-unknown-linux-gnu/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst"
+    "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-${yazi_arch}.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-${yazi_arch}/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst"
   yazi
 }
 alias file='files'
