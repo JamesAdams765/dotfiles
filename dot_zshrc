@@ -133,6 +133,18 @@ health-check() {
 ################################################################################
 
 commands() {
+  # Check if fzf is installed
+  if ! command -v fzf &>/dev/null; then
+    echo -e "❌ Error: 'fzf' is required for the commands menu"
+    echo ""
+    echo "Install it with:"
+    echo "  sudo apt-get install -y fzf  (on Linux/Raspberry Pi)"
+    echo "  brew install fzf              (on macOS)"
+    echo ""
+    echo "Or, view all commands manually with 'useful-aliases'"
+    return 1
+  fi
+  
   local cmd
   cmd=$(printf "%-24s %s\n" \
     "backup"                "📦  Backup/restore important files" \

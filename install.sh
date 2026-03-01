@@ -46,14 +46,27 @@ install_dependencies() {
     sudo apt-get update -qq >/dev/null 2>&1 || true
   fi
   
-  # Install required packages
-  local packages=("curl" "git" "zsh")
-  for pkg in "${packages[@]}"; do
+  # Install critical packages
+  local critical_packages=("curl" "git" "zsh")
+  for pkg in "${critical_packages[@]}"; do
     if ! command -v "$pkg" &>/dev/null; then
       echo "  → Installing $pkg..."
-      sudo apt-get install -y -qq "$pkg" >/dev/null 2>&1 || {
-        echo -e "${RED}❌ Failed to install $pkg${NC}"
+      if ! sudo apt-get install -y -qq "$pkg" >/dev/null 2>&1; then
+        echo -e "${RED}❌ Failed to install $pkg - this is required${NC}"
         exit 1
+      fi
+    else
+      echo "  ✓ $pkg already installed"
+    fi
+  done
+  
+  # Install optional but recommended packages
+  local optional_packages=("fzf" "build-essential" "curl")
+  for pkg in "${optional_packages[@]}"; do
+    if ! command -v "$pkg" &>/dev/null && ! dpkg -l 2>/dev/null | grep -q "^ii.*$pkg"; then
+      echo "  → Installing $pkg..."
+      sudo apt-get install -y -qq "$pkg" >/dev/null 2>&1 || {
+        echo -e "${YELLOW}  ⚠️  Could not install $pkg (non-critical, continuing)${NC}"
       }
     else
       echo "  ✓ $pkg already installed"
@@ -126,6 +139,62 @@ apply_dotfiles() {
   fi
 }
 
+# Install Oh My Zsh and plugins
+install_oh_my_zsh() {
+  echo -e "\n${BLUE}🎨 Installing Oh My Zsh and plugins...${NC}\n"
+  
+  if [ -d "$HOME/.oh-my-zsh" ]; then
+    echo "  ✓ Oh My Zsh already installed"
+  else
+    echo "  → Installing Oh My Zsh..."
+    if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended >/dev/null 2>&1; then
+      echo "  ✓ Oh My Zsh installed"
+    else
+      echo -e "${YELLOW}⚠️  Oh My Zsh installation had issues, continuing...${NC}"
+    fi
+  fi
+  
+  # Install zsh plugins
+  install_zsh_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions.git"
+  install_zsh_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+}
+
+# Helper function to install zsh plugins
+install_zsh_plugin() {
+  local plugin_name="$1"
+  local plugin_url="$2"
+  local plugin_dir="$HOME/.oh-my-zsh/custom/plugins/$plugin_name"
+  
+  if [ -d "$plugin_dir" ]; then
+    echo "  ✓ $plugin_name already installed"
+  else
+    echo "  → Installing $plugin_name..."
+    if git clone "$plugin_url" "$plugin_dir" >/dev/null 2>&1; then
+      echo "  ✓ $plugin_name installed"
+    else
+      echo -e "${YELLOW}  ⚠️  Could not install $plugin_name${NC}"
+    fi
+  fi
+}
+
+# Install Powerlevel10k theme
+install_powerlevel10k() {
+  echo -e "\n${BLUE}🎯 Installing Powerlevel10k theme...${NC}\n"
+  
+  local p10k_dir="$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+  
+  if [ -d "$p10k_dir" ]; then
+    echo "  ✓ Powerlevel10k already installed"
+  else
+    echo "  → Installing Powerlevel10k..."
+    if git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$p10k_dir" >/dev/null 2>&1; then
+      echo "  ✓ Powerlevel10k installed"
+    else
+      echo -e "${YELLOW}⚠️  Could not install Powerlevel10k${NC}"
+    fi
+  fi
+}
+
 # Set zsh as default shell
 set_default_shell() {
   echo -e "\n${BLUE}🐚 Setting zsh as default shell...${NC}\n"
@@ -185,11 +254,26 @@ verify_installation() {
     issues=$((issues + 1))
   fi
   
+  # Check fzf (important for commands function)
+  if command -v fzf &>/dev/null; then
+    echo "  ✓ fzf installed (commands menu will work)"
+  else
+    echo -e "${YELLOW}  ⚠️  fzf not found (commands menu requires fzf)${NC}"
+    echo "     To install: sudo apt-get install -y fzf"
+  fi
+  
+  # Check Oh My Zsh
+  if [ -d "$HOME/.oh-my-zsh" ]; then
+    echo "  ✓ Oh My Zsh installed"
+  else
+    echo -e "${YELLOW}  ⚠️  Oh My Zsh not found${NC}"
+  fi
+  
   if [ $issues -eq 0 ]; then
     echo -e "\n${GREEN}✅ Installation completed successfully!${NC}\n"
     return 0
   else
-    echo -e "\n${YELLOW}⚠️  Installation completed with $issues issue(s)${NC}\n"
+    echo -e "\n${YELLOW}⚠️  Installation completed with $issues critical issue(s)${NC}\n"
     return 1
   fi
 }
@@ -198,15 +282,25 @@ verify_installation() {
 show_next_steps() {
   echo -e "${BLUE}════════════════════════════════════════════════════════════════${NC}\n"
   echo -e "${GREEN}🎉 Next Steps:${NC}\n"
-  echo "  1. Start a new terminal session (logout and login, or reopen terminal)"
-  echo "  2. Run 'commands' to see all available utilities"
-  echo "  3. Run 'health-check' to verify all tools are installed"
-  echo "  4. Run 'config' to customize your shell configuration"
+  echo "  1. Exit this terminal session: exit"
+  echo "  2. Open a new terminal (or SSH session)"
+  echo "  3. You should now be using zsh by default"
+  echo "  4. Run these commands to verify:"
+  echo "     - commands      (see all available utilities)"
+  echo "     - health-check  (verify all tools are installed)"
+  echo "     - config        (customize your shell configuration)"
   echo ""
   echo -e "${BLUE}════════════════════════════════════════════════════════════════${NC}\n"
   echo "📚 Documentation: https://github.com/JamesAdams765/dotfiles"
   echo "💬 For help, type: commands"
   echo ""
+  
+  # If fzf is not installed, show warning
+  if ! command -v fzf &>/dev/null; then
+    echo -e "${YELLOW}⚠️  NOTE: The 'commands' menu requires fzf${NC}"
+    echo "   Install it with: sudo apt-get install -y fzf"
+    echo ""
+  fi
 }
 
 # Main execution
@@ -216,6 +310,8 @@ main() {
   install_chezmoi
   init_dotfiles
   apply_dotfiles
+  install_oh_my_zsh
+  install_powerlevel10k
   set_default_shell
   verify_installation
   show_next_steps
