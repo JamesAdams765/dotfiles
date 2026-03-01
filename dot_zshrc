@@ -182,8 +182,8 @@ commands() {
       "useful-aliases"        "⌨️   View useful shell aliases & navigation tricks" \
       "weather"               "🌤️   Show current weather" \
       "web"                   "🔗  Terminal web browser (lynx)" \
-      "z"                     "🚀  Jump to frecent directory (zoxide)" \
-      | fzf --prompt="Select Command: " --height=~30 --layout=reverse --border --no-sort)
+       "z"                     "🚀  Jump to frecent directory (zoxide)" \
+       | fzf --prompt="Select Command: " --height=30% --layout=reverse --border --no-sort)
     cmd=$(echo "$cmd" | awk '{print $1}')
     [[ -n "$cmd" ]] && eval "$cmd"
   else
