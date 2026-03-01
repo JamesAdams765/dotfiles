@@ -894,8 +894,8 @@ copilot() {
       command copilot -p "$prompt"
     fi
   else
-    # With arguments - pass them through
-    command copilot "$@"
+    # With arguments - treat as prompt text
+    command copilot -p "$*"
   fi
 }
 
@@ -932,11 +932,11 @@ gemini() {
     # No arguments - show interactive help
     echo "✨ Google Gemini AI Assistant"
     echo ""
-    echo "Usage: gemini [command] [options]"
-    echo "Run 'gemini --help' for more information"
+    echo "Usage: gemini [question or command]"
+    echo "Example: gemini 'What is the capital of France?'"
   else
-    # With arguments - pass them through
-    command gemini "$@"
+    # With arguments - treat as prompt/command
+    command gemini "$*"
   fi
 }
 
