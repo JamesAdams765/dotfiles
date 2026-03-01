@@ -289,10 +289,38 @@ _ensure() {
       echo "   https://brew.sh"
       return 1
     fi
-    eval "$macos_cmd"
+    if eval "$macos_cmd" 2>&1; then
+      # Success
+      true
+    else
+      local err=$?
+      echo "❌ Installation failed with error code $err"
+      return $err
+    fi
   else
     # Linux (Ubuntu, Debian, etc.)
-    eval "$linux_cmd"
+    # Show output for npm installs to help debug
+    if [[ "$cmd" == "copilot" || "$cmd" == "gemini" ]]; then
+      # For AI assistants, show npm output
+      if eval "$linux_cmd"; then
+        # Success
+        true
+      else
+        local err=$?
+        echo "❌ Installation failed with error code $err"
+        return $err
+      fi
+    else
+      # For other tools, suppress output
+      if eval "$linux_cmd" >/dev/null 2>&1; then
+        # Success
+        true
+      else
+        local err=$?
+        echo "❌ Installation failed with error code $err"
+        return $err
+      fi
+    fi
   fi
   
   # Verify installation succeeded
@@ -300,7 +328,8 @@ _ensure() {
     echo "✅ Successfully installed '$cmd'"
     return 0
   else
-    echo "❌ Failed to install '$cmd'"
+    echo "❌ Failed to install '$cmd' — command not found in PATH"
+    echo "   Try installing manually: $linux_cmd"
     return 1
   fi
 }
@@ -842,9 +871,15 @@ copilot() {
     return 1
   fi
   
-  _ensure copilot \
+  # Try to ensure copilot is installed
+  if ! _ensure copilot \
     "npm install -g @github/copilot" \
-    "npm install -g @github/copilot"
+    "npm install -g @github/copilot"; then
+    echo "❌ Failed to install GitHub Copilot"
+    echo "You can install it manually with:"
+    echo "  npm install -g @github/copilot"
+    return 1
+  fi
   
   if [[ $# -eq 0 ]]; then
     # No arguments - prompt user
@@ -875,9 +910,15 @@ gemini() {
     return 1
   fi
   
-  _ensure gemini \
+  # Try to ensure gemini is installed
+  if ! _ensure gemini \
     "npm install -g @google/generative-ai" \
-    "npm install -g @google/generative-ai"
+    "npm install -g @google/generative-ai"; then
+    echo "❌ Failed to install Google Gemini"
+    echo "You can install it manually with:"
+    echo "  npm install -g @google/generative-ai"
+    return 1
+  fi
   
   if [[ $# -eq 0 ]]; then
     # No arguments - show interactive help
