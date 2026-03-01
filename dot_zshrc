@@ -135,9 +135,11 @@ health-check() {
 commands() {
   local cmd
   cmd=$(printf "%-24s %s\n" \
+    "backup"                "📦  Backup/restore important files" \
     "backlog"               "📋  Markdown kanban board (backlog.md)" \
     "calendar"              "📅  Manage calendar events" \
     "computer"              "🖥️   Show system info (neofetch)" \
+    "config"                "⚙️   Edit & reload .zshrc configuration" \
     "copilot"               "🤖  GitHub Copilot AI assistant" \
     "dotfiles"              "🔄  Sync dotfiles with GitHub (push + pull)" \
     "dotfiles-force"        "☁️   Force overwrite local dotfiles from GitHub" \
@@ -157,13 +159,21 @@ commands() {
     "journal-data-platform" "📓  Data platform journal" \
     "journal-dev"           "📓  Dev journal" \
     "journal-work"          "📓  Work journal" \
+    "lazyssh"               "🔑  SSH connection manager" \
     "memory"                "📊  System resource monitor (btop)" \
+    "monitor"               "🔍  System resource monitor (htop)" \
     "mutt"                  "📧  Open email client (neomutt)" \
     "music"                 "🎵  Terminal music player" \
     "network"               "🔌  Network monitor (bottom)" \
+    "notes"                 "📝  Quick note taking utility" \
+    "path"                  "📍  Show PATH directories" \
+    "profile"               "⏱️   Show shell startup time profile" \
     "refresh"               "🔄  Reload shell configuration" \
+    "repos"                 "📦  Check git repos status" \
     "rss"                   "📰  RSS feed reader (newsboat)" \
     "storage"               "💾  Disk usage analyzer (ncdu)" \
+    "sync"                  "🔄  Quick alias for dotfiles" \
+    "sync-force"            "⚡  Quick alias for dotfiles --force" \
     "tasks"                 "✅  Task manager (select project)" \
     "update-apps"           "⬆️   Update all installed apps" \
     "useful-aliases"        "⌨️   View useful shell aliases & navigation tricks" \
@@ -609,6 +619,153 @@ fi
 ################################################################################
 
 # test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+################################################################################
+# DEVELOPMENT & UTILITY COMMANDS
+# Additional helper functions for productivity and configuration management
+################################################################################
+
+# Edit .zshrc and reload automatically
+config() {
+  local editor="${EDITOR:-nano}"
+  $editor ~/.zshrc && echo "✓ .zshrc updated" && exec zsh -l
+}
+
+# Quick note taking - save to ~/notes.txt
+notes() {
+  local notes_file="$HOME/notes.txt"
+  
+  if [[ $# -eq 0 ]]; then
+    # No args = display notes
+    if [[ -f "$notes_file" ]]; then
+      echo "📝 Your notes:\n"
+      cat "$notes_file" | nl
+    else
+      echo "📝 No notes yet. Try: notes 'Your note here'"
+    fi
+  elif [[ "$1" == "--clear" ]]; then
+    # Clear all notes
+    rm -f "$notes_file"
+    echo "✓ Notes cleared"
+  elif [[ "$1" == "--last" ]]; then
+    # Show last 5 notes
+    if [[ -f "$notes_file" ]]; then
+      tail -5 "$notes_file"
+    fi
+  else
+    # Add new note with timestamp
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$notes_file"
+    echo "✓ Note saved"
+  fi
+}
+
+# Backup important directories
+backup() {
+  local backup_dir="$HOME/.backups"
+  mkdir -p "$backup_dir"
+  
+  if [[ $# -eq 0 ]]; then
+    echo "📦 Usage: backup [directory] or backup --list"
+    echo "    backup --list     - Show backups"
+    echo "    backup --restore  - Restore from backup"
+    return 1
+  fi
+  
+  case "$1" in
+    --list)
+      ls -lh "$backup_dir" 2>/dev/null | tail -10 || echo "No backups found"
+      ;;
+    --restore)
+      echo "📦 Available backups:"
+      ls -1 "$backup_dir" | nl
+      local choice
+      read "choice?  Select backup to restore (number): "
+      local backup_file=$(ls -1 "$backup_dir" | sed -n "${choice}p")
+      if [[ -n "$backup_file" ]]; then
+        tar -xzf "$backup_dir/$backup_file" -C "$HOME" && echo "✓ Restored: $backup_file"
+      fi
+      ;;
+    *)
+      local target="$1"
+      if [[ -d "$target" || -f "$target" ]]; then
+        local name=$(basename "$target")
+        local timestamp=$(date '+%Y%m%d-%H%M%S')
+        tar -czf "$backup_dir/${name}-${timestamp}.tar.gz" "$target" 2>/dev/null && \
+          echo "✓ Backup created: ${name}-${timestamp}.tar.gz" || \
+          echo "❌ Backup failed"
+      else
+        echo "❌ Path not found: $target"
+        return 1
+      fi
+      ;;
+  esac
+}
+
+# Show shell startup time and profiling info
+profile() {
+  echo "⏱️  Shell startup profile:\n"
+  time zsh -ic "echo '  ...loading shell...' > /dev/null"
+}
+
+# Directory jump shortcut - quickly return to previous directory
+alias cd-='cd -'
+
+# Improved ls aliases
+alias lah='ls -lhAF'      # Long format with hidden files and sizes
+alias laa='ls -lFA'       # Long format with all files
+alias lsd='ls -dF */'     # Only directories
+
+# Quick sync alias for dotfiles
+alias sync='dotfiles'
+alias sync-force='dotfiles --force'
+
+# Show PATH in a readable format
+path() {
+  echo "$PATH" | tr ':' '\n' | nl
+}
+
+# Monitor system resources in real-time
+monitor() {
+  if command -v htop &>/dev/null; then
+    htop
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    top -l0
+  else
+    watch -n 1 'ps aux | head -20'
+  fi
+}
+
+# Quick repo status across multiple git directories
+repos() {
+  local repos_dir="${1:-.}"
+  local count=0
+  
+  echo "📦 Git repository status:\n"
+  
+  for dir in $(find "$repos_dir" -maxdepth 2 -type d -name ".git" 2>/dev/null | sed 's|/.git||'); do
+    count=$((count + 1))
+    local status=$(cd "$dir" && git status --porcelain 2>/dev/null | wc -l)
+    local branch=$(cd "$dir" && git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    
+    if [[ $status -gt 0 ]]; then
+      echo "  ⚠️  $(basename "$dir") [$branch] - $status changes"
+    else
+      echo "  ✓ $(basename "$dir") [$branch]"
+    fi
+  done
+  
+  [[ $count -eq 0 ]] && echo "  No git repositories found in $repos_dir" || echo "\n  Total: $count repos"
+}
+
+# Improved lazyssh function - SSH connection manager
+lazyssh() {
+  _ensure lazyssh \
+    "brew install jesseduffield/lazygit/lazyssh" \
+    "gh release download -D /tmp -p '*linux*' jesseduffield/lazyssh; sudo mv /tmp/lazyssh /usr/local/bin/ && sudo chmod +x /usr/local/bin/lazyssh"
+  
+  # Call the actual lazyssh binary (avoid function recursion)
+  command lazyssh "$@"
+}
 
 ################################################################################
 # NODE VERSION MANAGER (NVM)
