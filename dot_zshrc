@@ -872,12 +872,16 @@ copilot() {
   fi
   
   # Try to ensure copilot is installed
+  # First try with user npm (configured by install script)
+  # If that fails, try with sudo
   if ! _ensure copilot \
-    "npm install -g @github/copilot" \
-    "npm install -g @github/copilot"; then
+    "npm install -g @github/copilot || sudo npm install -g @github/copilot" \
+    "npm install -g @github/copilot || sudo npm install -g @github/copilot"; then
     echo "❌ Failed to install GitHub Copilot"
     echo "You can install it manually with:"
     echo "  npm install -g @github/copilot"
+    echo "  OR"
+    echo "  sudo npm install -g @github/copilot"
     return 1
   fi
   
@@ -911,12 +915,16 @@ gemini() {
   fi
   
   # Try to ensure gemini is installed
+  # First try with user npm (configured by install script)
+  # If that fails, try with sudo
   if ! _ensure gemini \
-    "npm install -g @google/generative-ai" \
-    "npm install -g @google/generative-ai"; then
+    "npm install -g @google/generative-ai || sudo npm install -g @google/generative-ai" \
+    "npm install -g @google/generative-ai || sudo npm install -g @google/generative-ai"; then
     echo "❌ Failed to install Google Gemini"
     echo "You can install it manually with:"
     echo "  npm install -g @google/generative-ai"
+    echo "  OR"
+    echo "  sudo npm install -g @google/generative-ai"
     return 1
   fi
   

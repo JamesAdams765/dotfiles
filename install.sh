@@ -278,6 +278,31 @@ verify_installation() {
   fi
 }
 
+# Configure npm to use user-writable directory
+configure_npm() {
+  if ! command -v npm &>/dev/null; then
+    return 0  # npm not installed, skip
+  fi
+  
+  echo -e "\n${BLUE}⚙️  Configuring npm for user installations...${NC}\n"
+  
+  # Create user npm directory
+  mkdir -p "$HOME/.npm-global/bin"
+  
+  # Configure npm to use this directory
+  npm config set prefix "$HOME/.npm-global" >/dev/null 2>&1
+  
+  # Add npm bin directory to PATH in .zshrc if not already there
+  if ! grep -q "npm-global" "$HOME/.zshrc" 2>/dev/null; then
+    echo "" >> "$HOME/.zshrc"
+    echo "# npm global packages (user-writable)" >> "$HOME/.zshrc"
+    echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$HOME/.zshrc"
+    echo "  ✓ Added npm global bin to PATH"
+  else
+    echo "  ✓ npm already configured"
+  fi
+}
+
 # Install optional command-line tools (auto-installed on first use)
 install_optional_tools() {
   echo -e "\n${BLUE}📚 Installing optional tools (auto-installed on first use)...${NC}\n"
@@ -350,6 +375,7 @@ main() {
   apply_dotfiles
   install_oh_my_zsh
   install_powerlevel10k
+  configure_npm
   install_optional_tools
   set_default_shell
   verify_installation
