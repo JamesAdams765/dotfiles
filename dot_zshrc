@@ -378,28 +378,57 @@ memory() {
 
 # File browser (yazi is a Rust-based file manager)
 files() {
-  # Detect system architecture for yazi download
+  # Detect system OS and architecture for yazi download
+  local os=$(uname -s)
   local arch=$(uname -m)
-  local yazi_arch
-  case "$arch" in
-    x86_64)
-      yazi_arch="x86_64-unknown-linux-gnu"
+  local yazi_target
+  
+  # Determine the correct yazi binary target based on OS and architecture
+  case "$os" in
+    Darwin)
+      # macOS - use Homebrew (works for both Intel and Apple Silicon)
+      yazi_target="homebrew"
       ;;
-    aarch64|arm64)
-      yazi_arch="aarch64-unknown-linux-gnu"
-      ;;
-    armv7l)
-      yazi_arch="armv7-unknown-linux-gnueabihf"
+    Linux)
+      # Linux - detect architecture and set appropriate target
+      case "$arch" in
+        x86_64)
+          yazi_target="x86_64-unknown-linux-gnu"
+          ;;
+        aarch64)
+          yazi_target="aarch64-unknown-linux-gnu"
+          ;;
+        arm64)
+          # Some systems report arm64 instead of aarch64
+          yazi_target="aarch64-unknown-linux-gnu"
+          ;;
+        armv7l)
+          yazi_target="armv7-unknown-linux-gnueabihf"
+          ;;
+        *)
+          echo "❌ Unsupported architecture on Linux: $arch"
+          return 1
+          ;;
+      esac
       ;;
     *)
-      echo "❌ Unsupported architecture: $arch"
+      echo "❌ Unsupported OS: $os"
       return 1
       ;;
   esac
   
-  _ensure yazi \
-    "brew install yazi" \
-    "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-${yazi_arch}.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-${yazi_arch}/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst"
+  # Set up the installation commands based on target
+  if [[ "$yazi_target" == "homebrew" ]]; then
+    _ensure yazi \
+      "brew install yazi" \
+      "brew install yazi"  # Fallback is same for macOS
+  else
+    # Linux with architecture-specific binary
+    _ensure yazi \
+      "brew install yazi" \
+      "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-${yazi_target}.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-${yazi_target}/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst"
+  fi
+  
   yazi
 }
 alias file='files'
