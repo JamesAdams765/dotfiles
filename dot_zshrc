@@ -1,484 +1,165 @@
-################################################################################
-# SHELL CONFIGURATION STARTUP
-# Initialization and dependency checks
-################################################################################
-
-# Enable strict error checking (optional but recommended)
-set -o pipefail
-
-################################################################################
-# ZSHRC DOCUMENTATION
-################################################################################
-
-# This .zshrc file is optimized for both macOS and Linux (Ubuntu/Debian)
-# It includes:
-# - Auto-installation of missing commands via _ensure()
-# - Integration with popular tools (fzf, zoxide, nvm, cargo, etc.)
-# - Convenient aliases and functions for productivity tools
-# - Organized sections with clear separation of concerns
-#
-# Key Custom Functions:
-#   commands          - Interactive command menu (uses fzf)
-#   _ensure           - Auto-install dependencies per OS
-#   dotfiles          - Sync config to/from GitHub (chezmoi)
-#   update-apps       - Update all installed package managers
-#   journal/tasks     - Productivity tools with fuzzy selection
-#
-# For help with available commands, type: commands
-
-################################################################################
-# POWERLEVEL10K INSTANT PROMPT
-# Must remain near the top before any interactive initialization
-################################################################################
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-################################################################################
-# OH MY ZSH CONFIGURATION
-################################################################################
+# If you come from bash you might have to change your $PATH.
+# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
+export PATH="$HOME/.npm-global/bin:$PATH"
 
-# Path to Oh My Zsh installation
+# Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
-# Check if Oh My Zsh is installed; if not, install it
-if [[ ! -d "$ZSH" ]]; then
-  echo "🔧 Oh My Zsh not found. Installing..."
-  if command -v curl &>/dev/null; then
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-  else
-    echo "❌ curl is required to install Oh My Zsh but is not installed"
-    echo "   Please install curl first: (brew install curl) or (sudo apt-get install curl)"
-    exit 1
-  fi
-fi
-
-# Theme selection (robbyrussell is a reliable, lightweight theme)
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time Oh My Zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ZSH_THEME="robbyrussell"
 
-# Oh My Zsh plugins - keep minimal for faster startup
-plugins=(
-  git                    # Git integration and aliases
-  zsh-autosuggestions    # Fish-like auto-completion suggestions
-  zsh-syntax-highlighting # Syntax highlighting as you type
-  web-search             # Search the web from terminal
-)
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
 
-# Load Oh My Zsh
 source "$ZSH/oh-my-zsh.sh"
 
-# Preferred editor for commands (VS Code, fallback to nano)
+# User configuration
+
+# Preferred editor
 export EDITOR='code'
-if ! command -v code &>/dev/null; then
-  export EDITOR='nano'
-fi
 
-################################################################################
-# POWERLEVEL10K THEME CUSTOMIZATION
-################################################################################
+# Set personal aliases, overriding those provided by Oh My Zsh libs,
+# plugins, and themes. Aliases can be placed here, though Oh My Zsh
+# users are encouraged to define aliases within a top-level file in
+# the $ZSH_CUSTOM folder, with .zsh extension.
+#
+# For a full list of active aliases, run `alias`.
 
-# Load Powerlevel10k config if it exists
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Enable bash completion support (for broader compatibility)
+# Bash completion init
 autoload bashcompinit && bashcompinit
 
-################################################################################
-# SYSTEM HEALTH CHECK
-# Quickly diagnose shell environment and installed tools
-################################################################################
-
-# Check installed tools and identify missing dependencies
-health-check() {
-  echo "🔍 Checking shell environment...\n"
-  
-  local tools=("fzf" "curl" "git" "brew" "zoxide" "nvm" "cargo" "go" "node" "npm" "python3" "direnv")
-  local missing=()
-  
-  echo "Installed Tools:"
-  for tool in "${tools[@]}"; do
-    if command -v "$tool" &>/dev/null; then
-      echo "  ✅ $tool"
-    else
-      echo "  ❌ $tool (not found)"
-      missing+=("$tool")
-    fi
-  done
-  
-  if [[ ${#missing[@]} -gt 0 ]]; then
-    echo "\n⚠️  Missing tools (${#missing[@]}):"
-    for tool in "${missing[@]}"; do
-      echo "  - $tool"
-    done
-  else
-    echo "\n✅ All major tools are installed!"
-  fi
-  
-  # Show OS info
-  echo "\nSystem Info:"
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "  OS: macOS"
-    echo "  Version: $(sw_vers -productVersion)"
-  else
-    echo "  OS: Linux"
-    if command -v lsb_release &>/dev/null; then
-      echo "  Distribution: $(lsb_release -d | cut -f2)"
-    fi
-  fi
-}
-
-################################################################################
-# INTERACTIVE COMMAND HELPER
-# Displays available commands with descriptions in an fzf menu
-################################################################################
+# macOS-specific completion commented out (requires Homebrew)
+# source $(brew --prefix)/etc/bash_completion.d/az
 
 commands() {
   local cmd
   cmd=$(printf "%-24s %s\n" \
-    "backlog"               "📋  Markdown kanban board (backlog.md)" \
-    "calendar"              "📅  Manage calendar events" \
-    "computer"              "🖥️   Show system info (neofetch)" \
+    "calendar"              "📅  manage calendar events" \
+    "computer"              "🖥️   show system info (neofetch)" \
+    "dotfiles"              "🔄  sync dotfiles with GitHub (push + pull)" \
+    "dotfiles-auth"                  "🔑  one-time GitHub auth for dotfiles sync" \
+    "dotfiles-force"                 "☁️   force overwrite local dotfiles from GitHub" \
+    "dotfiles-force-override-cloud"  "⬆️   force push local dotfiles to GitHub (overwrite cloud)" \
     "copilot"               "🤖  GitHub Copilot AI assistant" \
-    "dotfiles"              "🔄  Sync dotfiles with GitHub (push + pull)" \
-    "dotfiles-force"        "☁️   Force overwrite local dotfiles from GitHub" \
-    "dotfiles-force-override-cloud"  "⬆️   Force push local dotfiles to GitHub" \
-    "edit-commands"         "✏️   Edit this .zshrc file" \
-    "email"                 "📧  Open email client (neomutt)" \
-    "file"                  "📁  Browse files (alias for files)" \
-    "files"                 "📂  Browse files with yazi" \
-    "freememory"            "🧹  Drop system memory caches" \
+    "edit-commands"         "✏️   edit this .zshrc file" \
+    "email"                 "📧  open email client (neomutt)" \
+    "file"                  "📁  browse files (alias for files)" \
+    "files"                 "📂  browse files with yazi" \
+    "freememory"            "🧹  drop system memory caches" \
     "gemini"                "✨  Google Gemini AI assistant" \
-    "gping"                 "📡  Graphical ping monitor" \
-    "health-check"          "🔍  Check installed tools & dependencies" \
-    "help"                  "❓  List all aliases" \
+    "gping"                 "📡  graphical ping monitor" \
+    "help"                  "❓  list all aliases" \
     "html"                  "🌐  HTTP client / API tester (posting)" \
-    "journal"               "📓  Open a journal (select topic)" \
-    "journal-architecture"  "📓  Architecture journal" \
-    "journal-data-platform" "📓  Data platform journal" \
-    "journal-dev"           "📓  Dev journal" \
-    "journal-work"          "📓  Work journal" \
-    "memory"                "📊  System resource monitor (btop)" \
-    "mutt"                  "📧  Open email client (neomutt)" \
-    "music"                 "🎵  Terminal music player" \
-    "network"               "🔌  Network monitor (bottom)" \
-    "refresh"               "🔄  Reload shell configuration" \
+    "journal"               "📓  open a journal (select topic)" \
+    "journal-architecture"  "📓  architecture journal" \
+    "journal-data-platform" "📓  data platform journal" \
+    "journal-dev"           "📓  dev journal" \
+    "journal-work"          "📓  work journal" \
+    "memory"                "📊  system resource monitor (btop)" \
+    "mutt"                  "📧  open email client (neomutt)" \
+    "music"                 "🎵  terminal music player" \
+    "network"               "🔌  network monitor (bottom)" \
     "rss"                   "📰  RSS feed reader (newsboat)" \
-    "storage"               "💾  Disk usage analyzer (ncdu)" \
-    "tasks"                 "✅  Task manager (select project)" \
-    "update-apps"           "⬆️   Update all installed apps" \
-    "useful-aliases"        "⌨️   View useful shell aliases & navigation tricks" \
-    "weather"               "🌤️   Show current weather" \
-    "web"                   "🔗  Terminal web browser (lynx)" \
-    "z"                     "🚀  Jump to frecent directory (zoxide)" \
+    "storage"               "💾  disk usage analyzer (ncdu)" \
+    "backlog"               "📋  markdown kanban board (backlog.md)" \
+    "tasks"                 "✅  task manager (select project)" \
+    "update-apps"           "⬆️   update all installed apps" \
+    "weather"               "🌤️   show current weather" \
+    "web"                   "🔗  terminal web browser (lynx)" \
+    "z"                     "🚀  jump to frecent directory (zoxide)" \
     | fzf --prompt="Select Command: " --height=~30 --layout=reverse --border --no-sort)
   cmd=$(echo "$cmd" | awk '{print $1}')
   [[ -n "$cmd" ]] && eval "$cmd"
 }
 
-################################################################################
-# USEFUL ALIASES VIEWER
-# Displays helpful shell aliases and navigation tips
-################################################################################
-
-useful-aliases() {
-  echo ""
-  echo "╔════════════════════════════════════════════════════════════════════╗"
-  echo "║                    USEFUL SHELL ALIASES & TIPS                     ║"
-  echo "╚════════════════════════════════════════════════════════════════════╝"
-  echo ""
-  
-  echo "📁 DIRECTORY NAVIGATION:"
-  echo "  .              →  cd (in fzf, go to current directory)"
-  echo "  ..             →  cd .. (up one level)"
-  echo "  ...            →  cd ../.. (up two levels)"
-  echo "  ....           →  cd ../../.. (up three levels)"
-  echo "  z <pattern>    →  Jump to frequently used directory (zoxide)"
-  echo "  z -            →  Go back to previous directory"
-  echo ""
-  
-  echo "📂 FILE LISTING & BROWSING:"
-  echo "  ls             →  List files (basic)"
-  echo "  la             →  List all files including hidden (ls -laF)"
-  echo "  ll             →  List files with details (ls -lF)"
-  echo "  lh             →  List files with human-readable sizes (ls -lhF)"
-  echo "  files          →  Open file browser (yazi)"
-  echo "  storage        →  Disk usage analyzer (ncdu)"
-  echo ""
-  
-  echo "🔧 SYSTEM & SHELL UTILITIES:"
-  echo "  refresh        →  Reload shell configuration (exec zsh -l)"
-  echo "  help           →  Show all available aliases"
-  echo "  health-check   →  Check installed tools & dependencies"
-  echo "  commands       →  Open interactive command menu (fzf)"
-  echo "  mkdir dir      →  Create directory with parents (mkdir -p)"
-  echo ""
-  
-  echo "🔍 TEXT & CODE:"
-  echo "  grep           →  Search text with color output"
-  echo "  edit-commands  →  Edit this .zshrc file in VS Code"
-  echo ""
-  
-  echo "📊 SYSTEM MONITORING:"
-  echo "  memory         →  System resource monitor (btop)"
-  echo "  network        →  Network monitor (bottom)"
-  echo "  computer       →  System information (neofetch)"
-  echo "  weather        →  Display current weather"
-  echo "  freememory     →  Clear system memory caches"
-  echo ""
-  
-  echo "🌐 PRODUCTIVITY & WEB:"
-  echo "  web            →  Terminal web browser (lynx)"
-  echo "  email / mutt   →  Email client (neomutt)"
-  echo "  rss            →  RSS feed reader (newsboat)"
-  echo "  html           →  HTTP client / API tester (posting)"
-  echo ""
-  
-  echo "💡 TIP: Use these aliases to boost your terminal productivity!"
-  echo "   Press Ctrl+C to exit."
-  echo ""
-}
-
-################################################################################
-# AUTO-INSTALL HELPER FUNCTION
-# Attempts to install a command if not already available
-# Usage: _ensure <command> <macOS_install_cmd> <linux_install_cmd>
-# Returns: 0 if command exists or installation succeeds, 1 if installation fails
-################################################################################
-
+# Auto-install helper: _ensure <cmd> <macOS_install_cmd> <linux_install_cmd>
 _ensure() {
-  local cmd="$1"
-  local macos_cmd="$2"
-  local linux_cmd="$3"
-  
-  # Check if command already exists
-  command -v "$cmd" &>/dev/null && return 0
-  
-  echo "📦 '$cmd' not found — installing..."
-  
-  # Detect OS and run appropriate install command
+  command -v "$1" &>/dev/null && return 0
+  echo "📦 '$1' not found — installing..."
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS - check if Homebrew is installed
-    if ! command -v brew &>/dev/null; then
-      echo "❌ Homebrew not found. Please install Homebrew first:"
-      echo "   https://brew.sh"
-      return 1
-    fi
-    eval "$macos_cmd"
+    eval "$2"
   else
-    # Linux (Ubuntu, Debian, etc.)
-    eval "$linux_cmd"
-  fi
-  
-  # Verify installation succeeded
-  if command -v "$cmd" &>/dev/null; then
-    echo "✅ Successfully installed '$cmd'"
-    return 0
-  else
-    echo "❌ Failed to install '$cmd'"
-    return 1
+    eval "$3"
   fi
 }
 
-################################################################################
-# UTILITY COMMANDS & ALIASES
-# Commands that auto-install dependencies if needed
-################################################################################
-
-# Code editor - VS Code or Code OSS
-edit-commands() {
-  _ensure code \
-    "brew install --cask visual-studio-code" \
-    "snap install code --classic || sudo apt-get install -y code"
-  if command -v code &>/dev/null; then
-    code ~/.zshrc
-  fi
-}
-
-# Weather - display current weather in San Antonio
-weather() {
-  _ensure curl \
-    "brew install curl" \
-    "sudo apt-get install -y curl"
-  if command -v curl &>/dev/null; then
-    curl wttr.in/SanAntonio
-  fi
-}
-
-# Email client
-mutt() {
-  _ensure neomutt \
-    "brew install neomutt" \
-    "sudo apt-get install -y neomutt"
-  neomutt
-}
+# commands
+edit-commands() { _ensure code "brew install --cask visual-studio-code" "snap install code --classic" && code ~/.zshrc }
+weather()       { _ensure curl "brew install curl" "sudo apt-get install -y curl" && curl wttr.in/SanAntonio }
+mutt()          { _ensure neomutt "brew install neomutt" "sudo apt-get install -y neomutt" && neomutt }
 alias email='mutt'
-
-# RSS feed reader
-rss() {
-  _ensure newsboat \
-    "brew install newsboat" \
-    "sudo apt-get install -y newsboat"
-  newsboat -u "$HOME/AI_Projects/newsboat_urls"
-}
-
-# Terminal web browser
-web() {
-  _ensure lynx \
-    "brew install lynx" \
-    "sudo apt-get install -y lynx"
-  lynx -accept_all_cookies "$@"
-}
-
-# System memory monitor
-memory() {
-  _ensure btop \
-    "brew install btop" \
-    "sudo apt-get install -y btop"
-  btop
-}
-
-# File browser (yazi is a Rust-based file manager)
-files() {
-  _ensure yazi \
-    "brew install yazi" \
-    "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-x86_64-unknown-linux-gnu/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst"
-  yazi
-}
+rss()           { _ensure newsboat "brew install newsboat" "sudo apt-get install -y newsboat" && newsboat -u "$HOME/AI_Projects/newsboat_urls" }
+web()           { _ensure lynx "brew install lynx" "sudo apt-get install -y lynx" && lynx -accept_all_cookies "$@" }
+memory()        { _ensure btop "brew install btop" "sudo apt-get install -y btop" && btop }
+files()         { _ensure yazi "brew install yazi" "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-x86_64-unknown-linux-gnu/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst" && yazi }
 alias file='files'
-
-# Disk usage analyzer
-storage() {
-  _ensure ncdu \
-    "brew install ncdu" \
-    "sudo apt-get install -y ncdu"
-  ncdu
-}
-
-# Show all available aliases
+storage()       { _ensure ncdu "brew install ncdu" "sudo apt-get install -y ncdu" && ncdu }
 alias help='alias'
-
-# Reload shell configuration
+html()          { _ensure posting "pipx install posting" "pipx install posting" && posting }
+alias freememory='sync; echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null && echo "🧹 Memory caches cleared"'
+calendar()      { _ensure calcure "pipx install calcure" "pipx install calcure" && calcure }
 alias refresh='exec zsh -l'
+network()       { _ensure btm "brew install bottom" "snap install bottom" && btm }
+gping()         { _ensure gping "brew install gping" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install gping" && command gping "$@" }
+computer()      { _ensure neofetch "brew install neofetch" "sudo apt-get install -y neofetch" && neofetch }
+music()         { _ensure musictui "brew install musictui" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install termusic" && musictui }
 
-# Quick directory navigation
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-
-# Listing files (better defaults)
-alias la='ls -laF'
-alias ll='ls -lF'
-alias lh='ls -lhF'
-
-# Always use color for grep
-alias grep='grep --color=auto'
-
-# Make mkdir create parent directories automatically
-alias mkdir='mkdir -p'
-
-# HTTP client / API testing tool
-html() {
-  _ensure posting \
-    "pipx install posting" \
-    "pipx install posting"
-  posting
-}
-
-# Free system memory caches (Linux only)
-freememory() {
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "⚠️  Memory cache clearing is primarily a Linux feature"
-    sync
-  else
-    sync && echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null && echo "🧹 Memory caches cleared"
-  fi
-}
-
-# Calendar management
-calendar() {
-  _ensure calcure \
-    "pipx install calcure" \
-    "pipx install calcure"
-  calcure
-}
-
-# Network monitor
-network() {
-  _ensure btm \
-    "brew install bottom" \
-    "snap install bottom"
-  btm
-}
-
-# Graphical ping tool (requires Rust/cargo)
-gping() {
-  _ensure gping \
-    "brew install gping" \
-    "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install gping"
-  command gping "$@"
-}
-
-# System information display
-computer() {
-  _ensure neofetch \
-    "brew install neofetch" \
-    "sudo apt-get install -y neofetch"
-  neofetch
-}
-
-# Terminal music player (requires Rust/cargo)
-music() {
-  _ensure musictui \
-    "brew install musictui" \
-    "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install termusic"
-  musictui
-}
-
-################################################################################
-# UPDATE ALL APPLICATIONS
-# Updates packages across all installed package managers
-################################################################################
-
+# update-apps
 update-apps() {
-  echo "🔄 Checking for application updates...\n"
+  echo "🔄 Checking for application updates..."
 
-  # apt (Debian/Ubuntu/Linux)
+  # apt (Debian/Ubuntu)
   if command -v apt-get &>/dev/null; then
-    echo "📦 apt — updating system packages..."
+    echo "\n📦 apt — updating system packages..."
     sudo apt-get update -qq && sudo apt-get upgrade -y
   fi
 
-  # snap (Snap packages on Linux)
+  # snap
   if command -v snap &>/dev/null; then
     echo "\n📦 snap — refreshing snaps..."
     sudo snap refresh
   fi
 
-  # Homebrew (macOS and Linux)
+  # Homebrew (macOS)
   if command -v brew &>/dev/null; then
     echo "\n📦 brew — updating Homebrew packages..."
     brew update && brew upgrade
   fi
 
-  # pipx (Python app manager)
+  # pipx
   if command -v pipx &>/dev/null; then
     echo "\n📦 pipx — upgrading all pipx packages..."
     pipx upgrade-all
   fi
 
-  # cargo (Rust package manager)
-  # Note: Requires cargo-update crate to be installed
+  # cargo (Rust) — requires cargo-update crate
   if command -v cargo &>/dev/null; then
     if cargo install --list 2>/dev/null | grep -q "^cargo-update"; then
       echo "\n📦 cargo — updating installed crates..."
       cargo install-update -a
     else
-      echo "\n📦 cargo — install 'cargo-update' for crate upgrades:"
-      echo "     cargo install cargo-update"
+      echo "\n📦 cargo — install cargo-update to enable crate upgrades (cargo install cargo-update)"
     fi
   fi
 
-  # npm (Node.js global packages)
+  # npm global packages
   if command -v npm &>/dev/null; then
     local npm_prefix
     npm_prefix=$(npm config get prefix)
@@ -486,40 +167,38 @@ update-apps() {
       echo "\n📦 npm — updating global packages..."
       npm update -g
     else
-      echo "\n📦 npm — skipping (requires sudo, configure npm for user permissions)"
+      echo "\n📦 npm — skipping update (system npm, requires sudo)"
     fi
   fi
 
-  # nvm (Node Version Manager)
-  # Updates Node.js to the latest LTS version
+  # nvm (Node Version Manager) — update to latest LTS
   if [[ -s "$NVM_DIR/nvm.sh" ]]; then
-    echo "\n📦 nvm — checking for newer Node.js LTS..."
+    echo "\n📦 nvm — checking for newer Node LTS..."
     source "$NVM_DIR/nvm.sh" && nvm install --lts --reinstall-packages-from=current
   fi
 
-  # go (Go language tools)
+  # go tools
   if command -v go &>/dev/null; then
     echo "\n📦 go — updating installed go tools..."
     go install github.com/ajaxray/geek-life@latest 2>/dev/null && echo "  ✓ geek-life"
   fi
 
-  # Nerd Fonts (monospace fonts for terminals and IDEs)
-  echo "\n📦 Updating JetBrainsMono Nerd Font..."
+  # Nerd Fonts — update to latest release
+  echo "\n📦 nerd-fonts — updating JetBrainsMono Nerd Font..."
   local nf_dir="$HOME/.local/share/fonts"
   local nf_zip="/tmp/JetBrainsMono.zip"
   mkdir -p "$nf_dir"
-  
-  if curl -fsSL -o "$nf_zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"; then
+  if curl -fsSL -o "$nf_zip"       "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"; then
     unzip -o -q "$nf_zip" -d "$nf_dir/" && fc-cache -f "$nf_dir" && echo "  ✓ JetBrainsMono Nerd Font updated"
     rm -f "$nf_zip"
   else
-    echo "  ⚠️  Download failed (check internet connection)"
+    echo "  ⚠️  nerd-fonts — download failed (check internet connection)"
   fi
 
-  echo "\n✅ App updates complete!\n"
+  echo "\n✅ All updates complete!"
 
-  # Dotfiles sync (uses chezmoi for dotfile management)
-  echo "📦 Dotfiles — syncing from GitHub..."
+  # dotfiles — install chezmoi if missing, then sync from GitHub
+  echo "\n📦 dotfiles — syncing from GitHub..."
   if ! command -v chezmoi &>/dev/null; then
     echo "  chezmoi not found — installing..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -528,9 +207,8 @@ update-apps() {
       sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
     fi
   fi
-  
   if command -v chezmoi &>/dev/null; then
-    chezmoi update && echo "  ✓ Dotfiles up to date"
+    chezmoi update && echo "  ✓ dotfiles up to date"
   else
     echo "  ⚠️  chezmoi install failed — skipping dotfiles sync"
   fi
@@ -538,134 +216,76 @@ update-apps() {
   echo "\n✅ All updates complete!"
 }
 
-################################################################################
-# JOURNAL MANAGEMENT
-# Organize journal entries by topic
-################################################################################
-
+# journal
 journal() {
   local j
   j=$(printf "architecture\nwork\ndev\ndata-platform\n" \
     | fzf --prompt="Select Journal: " --height=~8 --layout=reverse --border --no-sort)
-  
-  if [[ -n "$j" ]]; then
-    _ensure tjournal \
-      "brew install tjournal" \
-      "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install tui-journal"
-    tjournal -j "$HOME/.tjournal/$j/$j.json"
-  fi
+  [[ -n "$j" ]] && _ensure tjournal "brew install tjournal" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install tui-journal" && tjournal -j "$HOME/.tjournal/$j/$j.json"
 }
-
-# Quick access to specific journals
 alias journal-architecture='tjournal -j ~/.tjournal/architecture/architecture.json'
 alias journal-work='tjournal -j ~/.tjournal/work/work.json'
 alias journal-dev='tjournal -j ~/.tjournal/dev/dev.json'
 alias journal-data-platform='tjournal -j ~/.tjournal/data-platform/data-platform.json'
 
-################################################################################
-# BACKLOG & TASK MANAGEMENT
-################################################################################
+# backlog
+backlog()       { _ensure backlog "brew install backlog-md" "npm install -g backlog.md" && command backlog }
 
-# Markdown kanban board
-backlog() {
-  _ensure backlog \
-    "brew install backlog-md" \
-    "npm install -g backlog-md"
-  command backlog
-}
-
-# Task manager (uses geek-life with different database files for projects)
+# tasks
 tasks() {
   local db
   db=$(printf "employees\nbroadway\nchurch\nfamily\n" \
     | fzf --prompt="Select Task DB: " --height=~8 --layout=reverse --border --no-sort)
-  
-  if [[ -n "$db" ]]; then
-    _ensure geek-life \
-      "go install github.com/ajaxray/geek-life@latest" \
-      "go install github.com/ajaxray/geek-life@latest"
-    geek-life --db-file "$HOME/.geek-life-work-$db.db"
-  fi
+  [[ -n "$db" ]] && _ensure geek-life "go install github.com/ajaxray/geek-life@latest" "go install github.com/ajaxray/geek-life@latest" && geek-life --db-file "$HOME/.geek-life-work-$db.db"
 }
-
-# Quick access to specific task databases
 alias tasks-employees='geek-life --db-file ~/.geek-life-work-employees.db'
 alias tasks-broadway='geek-life --db-file ~/.geek-life-work-broadway.db'
 alias tasks-church='geek-life --db-file ~/.geek-life-work-church.db'
 alias tasks-family='geek-life --db-file ~/.geek-life-work-family.db'
 
-################################################################################
-# DIRECTORY NAVIGATION
-################################################################################
-
 # zoxide - smarter cd (init replaces 'z' alias)
-if command -v zoxide &>/dev/null; then
+if command -v zoxide &> /dev/null; then
   eval "$(zoxide init zsh)"
 fi
 
-################################################################################
-# iTERM2 INTEGRATION (macOS ONLY)
-# Uncomment if you use iTerm2 as your terminal
-################################################################################
-
+# iTerm2 integration commented out (macOS specific)
 # test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-################################################################################
-# NODE VERSION MANAGER (NVM)
-# Install from: https://github.com/nvm-sh/nvm
-################################################################################
-
+# NVM
 export NVM_DIR="$HOME/.nvm"
-[[ -s "$NVM_DIR/nvm.sh" ]] && \. "$NVM_DIR/nvm.sh"           # Load nvm
-[[ -s "$NVM_DIR/bash_completion" ]] && \. "$NVM_DIR/bash_completion"  # Load nvm bash completion
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-################################################################################
-# PATH CONFIGURATION
-# Add custom tool directories to PATH
-################################################################################
-
-# OpenCode CLI
+# opencode
 export PATH="$HOME/.opencode/bin:$PATH"
 
-# Antigravity tools
+# Antigravity
 export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 
-# User-installed binaries
+# Local bin
 export PATH="$HOME/.local/bin:$PATH"
 
-# Rust / Cargo (Rust toolchain)
+# Rust / cargo
 [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
 export PATH="$HOME/.cargo/bin:$PATH"
 
-# LM Studio CLI (local LLM)
+# LM Studio CLI (lms)
 export PATH="$PATH:$HOME/.lmstudio/bin"
 
-################################################################################
-# DIRENV INTEGRATION
-# Loads environment variables from .envrc files (auto project config)
-################################################################################
-
-if command -v direnv &>/dev/null; then
+# direnv hook
+if command -v direnv &> /dev/null; then
   eval "$(direnv hook zsh)"
 fi
 
-################################################################################
-# AI ASSISTANTS
-# GitHub Copilot and Google Gemini wrappers
-################################################################################
+# AI assistants
+copilot()       { command copilot "$@" }
+gemini()        { command gemini "$@" }
 
-copilot() { command copilot "$@" }
-gemini()  { command gemini "$@" }
-
-################################################################################
-# DOTFILES MANAGEMENT
-# Syncs configuration files to/from GitHub using chezmoi
-################################################################################
-
+# Dotfiles sync
 dotfiles() {
   local chezmoi_dir="$HOME/.local/share/chezmoi"
 
-  # Option 1: Force override - pull from GitHub, discard local changes
+  # Force override: pull cloud version and discard all local changes
   if [[ "$1" == "--force" || "$1" == "-f" ]]; then
     echo "\n⚠️  Force override: discarding local changes and pulling from GitHub...\n"
     git -C "$chezmoi_dir" fetch origin
@@ -677,10 +297,11 @@ dotfiles() {
 
   echo "\n🔄 Syncing dotfiles...\n"
 
-  # Step 1: Pull changes from GitHub first (prevents losing remote changes)
+  # Step 1: Pull from GitHub first (so remote additions aren't lost)
   echo "  ⬇️  Pulling from GitHub..."
   if ! git -C "$chezmoi_dir" pull --no-rebase 2>&1; then
-    # Handle merge conflicts if they occur
+
+    # Detect conflict files
     local conflicts
     conflicts=($(git -C "$chezmoi_dir" diff --name-only --diff-filter=U 2>/dev/null))
 
@@ -688,7 +309,6 @@ dotfiles() {
       echo "\n  ⚠️  Merge conflicts detected in:"
       for f in $conflicts; do echo "      - $f"; done
 
-      # Resolve each conflict interactively
       for f in $conflicts; do
         echo "\n  Conflict in: $f"
         echo "    1) Keep my local changes"
@@ -698,25 +318,21 @@ dotfiles() {
         read "choice?  Enter choice (1/2/3): "
         case "$choice" in
           1)
-            # Keep local version
             git -C "$chezmoi_dir" checkout --ours -- "$f"
             git -C "$chezmoi_dir" add "$f"
             echo "  ✓ Kept local changes for $f"
             ;;
           2)
-            # Accept remote version
             git -C "$chezmoi_dir" checkout --theirs -- "$f"
             git -C "$chezmoi_dir" add "$f"
             echo "  ✓ Used remote changes for $f"
             ;;
           3)
-            # Manual resolution
             ${EDITOR:-nano} "$chezmoi_dir/$f"
             git -C "$chezmoi_dir" add "$f"
             echo "  ✓ Manually resolved $f"
             ;;
           *)
-            # Default to keeping local
             echo "  ⚠️  Invalid choice — keeping local changes for $f"
             git -C "$chezmoi_dir" checkout --ours -- "$f"
             git -C "$chezmoi_dir" add "$f"
@@ -732,15 +348,15 @@ dotfiles() {
     fi
   fi
 
-  # Step 2: Apply pulled changes to actual files
+  # Step 2: Apply pulled source to local files (--force overwrites local modifications)
   echo "\n  ✅ Applying changes to local files..."
-  chezmoi apply
+  chezmoi apply --force
 
-  # Step 3: Capture any new local modifications
+  # Step 3: Capture any local edits made on top of the pulled version
   echo "\n  📋 Capturing local changes..."
   chezmoi re-add
 
-  # Step 4: Commit and push if there are new changes
+  # Step 4: Commit and push if anything changed
   if ! git -C "$chezmoi_dir" diff --quiet HEAD 2>/dev/null || \
      ! git -C "$chezmoi_dir" diff --cached --quiet 2>/dev/null; then
     git -C "$chezmoi_dir" add -A
@@ -755,7 +371,6 @@ dotfiles() {
   echo "\n  ✓ Dotfiles synced!\n"
 }
 
-# Force override: pull from GitHub and discard all local changes
 dotfiles-force() {
   local chezmoi_dir="$HOME/.local/share/chezmoi"
   echo "\n⚠️  Force override: discarding local changes and pulling from GitHub...\n"
@@ -765,7 +380,6 @@ dotfiles-force() {
   echo "\n  ✓ Dotfiles force-synced from GitHub!\n"
 }
 
-# Force override cloud: push local dotfiles to GitHub, overwriting remote
 dotfiles-force-override-cloud() {
   local chezmoi_dir="$HOME/.local/share/chezmoi"
   echo "\n⚠️  Force push: overwriting GitHub with local dotfiles...\n"
