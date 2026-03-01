@@ -292,15 +292,7 @@ configure_npm() {
   # Configure npm to use this directory
   npm config set prefix "$HOME/.npm-global" >/dev/null 2>&1
   
-  # Add npm bin directory to PATH in .zshrc if not already there
-  if ! grep -q "npm-global" "$HOME/.zshrc" 2>/dev/null; then
-    echo "" >> "$HOME/.zshrc"
-    echo "# npm global packages (user-writable)" >> "$HOME/.zshrc"
-    echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$HOME/.zshrc"
-    echo "  ✓ Added npm global bin to PATH"
-  else
-    echo "  ✓ npm already configured"
-  fi
+  echo "  ✓ npm configured (PATH set in shell config)"
 }
 
 # Install optional command-line tools (auto-installed on first use)

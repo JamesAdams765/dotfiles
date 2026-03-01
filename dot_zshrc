@@ -819,6 +819,9 @@ export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 # User-installed binaries
 export PATH="$HOME/.local/bin:$PATH"
 
+# npm global packages (configured for user-writable installation)
+export PATH="$HOME/.npm-global/bin:$PATH"
+
 # Rust / Cargo (Rust toolchain)
 [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
 export PATH="$HOME/.cargo/bin:$PATH"
