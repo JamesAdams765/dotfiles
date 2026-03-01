@@ -13,8 +13,10 @@ curl -fsSL https://raw.githubusercontent.com/JamesAdams765/dotfiles/master/insta
 The script will:
 - ✓ Detect your OS (macOS, Raspberry Pi, Ubuntu, Debian, etc.)
 - ✓ Install required dependencies (curl, git, zsh)
+- ✓ Install development tools (build-essential, nodejs, npm)
 - ✓ Install and initialize chezmoi (dotfiles manager)
 - ✓ Clone and apply your dotfiles
+- ✓ Pre-install optional tools (fzf, btop, ncdu, neofetch, etc.)
 - ✓ Set zsh as your default shell
 - ✓ Verify everything is working
 

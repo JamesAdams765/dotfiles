@@ -16,13 +16,14 @@ The installation script automatically:
 
 1. ✓ **Detects your OS** - Identifies Raspberry Pi (ARM/ARM64)
 2. ✓ **Installs core dependencies** - curl, git, zsh
-3. ✓ **Installs optional tools** - fzf (for menu system), Node.js, npm
-4. ✓ **Installs chezmoi** - Dotfiles manager
-5. ✓ **Clones dotfiles** - From GitHub
-6. ✓ **Installs Oh My Zsh** - Shell framework
-7. ✓ **Installs Powerlevel10k** - Modern prompt theme
-8. ✓ **Sets zsh as default** - Changes your shell
-9. ✓ **Verifies installation** - Checks everything worked
+3. ✓ **Installs development tools** - Node.js, npm, build-essential
+4. ✓ **Installs optional tools** - fzf, btop, ncdu, neofetch, neomutt, newsboat, lynx, htop
+5. ✓ **Installs chezmoi** - Dotfiles manager
+6. ✓ **Clones dotfiles** - From GitHub
+7. ✓ **Installs Oh My Zsh** - Shell framework
+8. ✓ **Installs Powerlevel10k** - Modern prompt theme
+9. ✓ **Sets zsh as default** - Changes your shell
+10. ✓ **Verifies installation** - Checks everything worked
 
 ## After Installation
 
@@ -263,25 +264,46 @@ dotfiles
 
 ## What Gets Installed
 
-### Files
-- `~/.zshrc` - Main shell configuration (900+ lines)
+### System Configuration Files
+- `~/.zshrc` - Main shell configuration (900+ lines with 45+ utility functions)
 - `~/.p10k.zsh` - Powerlevel10k prompt customization
 - `~/.oh-my-zsh/` - Oh My Zsh framework
 
-### Programs
-- **zsh** - Shell
-- **chezmoi** - Dotfiles manager
-- **fzf** - Fuzzy finder (for commands menu)
+### Core Programs (Always Installed)
+- **zsh** - Modern shell
+- **chezmoi** - Dotfiles synchronization manager
 - **git** - Version control
-- **curl** - Download tool
+- **curl** - Download utility
 
-### Optional (auto-install on use)
-- **htop** - System monitor
-- **neofetch** - System info
-- **yazi** - File browser
-- **neomutt** - Email client
-- **newsboat** - RSS reader
-- **lazyssh** - SSH manager
+### Development Tools (Optional but Recommended)
+- **Node.js** - JavaScript runtime (required for copilot/gemini AI assistants)
+- **npm** - Node package manager
+- **build-essential** - C/C++ compiler toolchain
+- **wget** - Download utility (alternative to curl)
+- **tar/gzip** - File compression tools
+
+### System Utilities (Pre-Installed)
+These are pre-installed during setup so they're immediately available:
+- **fzf** - Fuzzy finder (required for commands menu)
+- **btop** - Beautiful system resource monitor
+- **ncdu** - Disk usage analyzer
+- **neofetch** - System information display
+- **neomutt** - Terminal email client
+- **newsboat** - RSS feed reader
+- **lynx** - Terminal web browser
+- **htop** - System monitor (fallback for monitor command)
+
+### Tools with Auto-Install (On First Use)
+If pre-installation fails, these will auto-install when you first use them via the `_ensure()` function:
+- **yazi** - Modern file browser
+- **lazyssh** - SSH connection manager
+- **geek-life** - Task/todo manager
+- **tui-journal** - Terminal journal app
+- **backlog-md** - Markdown kanban board
+- **posting** - HTTP client for API testing
+- **gping** - Graphical ping tool
+- **musictui** - Terminal music player
+- **calcure** - Calendar/scheduling tool
 
 ## Performance Notes
 
