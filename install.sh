@@ -60,8 +60,8 @@ install_dependencies() {
     fi
   done
   
-  # Install optional but recommended packages
-  local optional_packages=("fzf" "build-essential" "curl" "nodejs" "npm")
+  # Install optional but recommended packages (auto-install system)
+  local optional_packages=("fzf" "build-essential" "nodejs" "npm" "wget" "tar" "gzip")
   for pkg in "${optional_packages[@]}"; do
     if ! command -v "$pkg" &>/dev/null && ! dpkg -l 2>/dev/null | grep -q "^ii.*$pkg"; then
       echo "  → Installing $pkg..."
@@ -278,6 +278,44 @@ verify_installation() {
   fi
 }
 
+# Install optional command-line tools (auto-installed on first use)
+install_optional_tools() {
+  echo -e "\n${BLUE}📚 Installing optional tools (auto-installed on first use)...${NC}\n"
+  
+  # Tools and their installation commands
+  # Format: "tool_name" "apt-get package"
+  local tools=(
+    "btop:btop"                    # System resource monitor
+    "ncdu:ncdu"                    # Disk usage analyzer
+    "neofetch:neofetch"            # System info display
+    "neomutt:neomutt"              # Email client
+    "newsboat:newsboat"            # RSS feed reader
+    "lynx:lynx"                    # Terminal web browser
+    "htop:htop"                    # System monitor (fallback for monitor)
+  )
+  
+  echo "  Attempting to pre-install common optional tools:"
+  
+  for tool_entry in "${tools[@]}"; do
+    IFS=':' read -r tool_name pkg_name <<< "$tool_entry"
+    
+    if ! command -v "$tool_name" &>/dev/null && ! dpkg -l 2>/dev/null | grep -q "^ii.*$pkg_name"; then
+      echo "  → Installing $tool_name..."
+      if sudo apt-get install -y -qq "$pkg_name" >/dev/null 2>&1; then
+        echo "    ✓ $tool_name installed"
+      else
+        echo -e "    ${YELLOW}⚠️  Could not install $tool_name (will try on first use)${NC}"
+      fi
+    else
+      echo "  ✓ $tool_name already installed"
+    fi
+  done
+  
+  echo ""
+  echo "  Note: Other tools (yazi, lazyssh, etc.) will auto-install on first use"
+  echo "        using _ensure() function in your shell configuration."
+}
+
 # Show next steps
 show_next_steps() {
   echo -e "${BLUE}════════════════════════════════════════════════════════════════${NC}\n"
@@ -312,6 +350,7 @@ main() {
   apply_dotfiles
   install_oh_my_zsh
   install_powerlevel10k
+  install_optional_tools
   set_default_shell
   verify_installation
   show_next_steps
