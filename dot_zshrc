@@ -417,28 +417,71 @@ files() {
       ;;
   esac
   
-  # If yazi exists but is not in PATH or wrong binary, remove it
-  # This handles cases where old incompatible binaries are installed
+  # Check if yazi exists and works
+  local yazi_works=false
   if command -v yazi &>/dev/null; then
     local yazi_path=$(command -v yazi)
-    # Check if it's an x86_64 binary on ARM or vice versa (will fail to execute)
-    if ! "$yazi_path" --version &>/dev/null 2>&1; then
-      echo "⚠️  Removing incompatible yazi binary at $yazi_path..."
+    # Try to run yazi --version to verify it actually works
+    if "$yazi_path" --version &>/dev/null 2>&1; then
+      yazi_works=true
+    else
+      # Binary exists but doesn't work (likely glibc incompatibility)
+      echo "⚠️  Removing non-functional yazi binary at $yazi_path..."
       sudo rm -f "$yazi_path" 2>/dev/null || rm -f "$yazi_path"
     fi
   fi
   
-  # Set up the installation commands based on target
-  if [[ "$yazi_target" == "homebrew" ]]; then
-    _ensure yazi \
-      "brew install yazi" \
-      "brew install yazi"  # Fallback is same for macOS
-  else
-    # Linux with architecture-specific binary
-    # First try pre-compiled binary, fall back to building from source if glibc version incompatible
-    _ensure yazi \
-      "brew install yazi" \
-      "curl -Lo /tmp/yazi.zip https://github.com/sxyazi/yazi/releases/latest/download/yazi-${yazi_target}.zip && unzip -q /tmp/yazi.zip -d /tmp/yazi_inst && sudo install -m755 /tmp/yazi_inst/yazi-${yazi_target}/yazi /usr/local/bin/ && rm -rf /tmp/yazi.zip /tmp/yazi_inst || (echo '⚠️  Pre-compiled binary incompatible, building from source...' && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install --locked yazi-fm)"
+  # Only install if yazi doesn't work properly
+  if [[ "$yazi_works" == "false" ]]; then
+    if [[ "$yazi_target" == "homebrew" ]]; then
+      # macOS - use Homebrew
+      _ensure yazi \
+        "brew install yazi" \
+        "brew install yazi"
+    else
+      # Linux - try pre-compiled first, then fall back to cargo build
+      echo "📦 Installing yazi for $arch..."
+      echo "  Attempting pre-compiled binary..."
+      
+      local yazi_install_dir="/usr/local/bin"
+      local yazi_zip="/tmp/yazi.zip"
+      local yazi_unzip_dir="/tmp/yazi_inst"
+      
+      # Download and try pre-compiled binary
+      if curl -fsSL -Lo "$yazi_zip" "https://github.com/sxyazi/yazi/releases/latest/download/yazi-${yazi_target}.zip" && \
+         unzip -q "$yazi_zip" -d "$yazi_unzip_dir" && \
+         sudo install -m755 "$yazi_unzip_dir/yazi-${yazi_target}/yazi" "$yazi_install_dir/" && \
+         rm -rf "$yazi_zip" "$yazi_unzip_dir"; then
+        
+        # Test if the binary works
+        if "$yazi_install_dir/yazi" --version &>/dev/null 2>&1; then
+          echo "✅ Pre-compiled yazi installed successfully"
+          yazi_works=true
+        else
+          # Pre-compiled binary has compatibility issues (glibc mismatch)
+          echo "⚠️  Pre-compiled binary has compatibility issues (glibc version mismatch)"
+          sudo rm -f "$yazi_install_dir/yazi" 2>/dev/null || rm -f "$yazi_install_dir/yazi"
+        fi
+      fi
+      
+      # If pre-compiled didn't work, build from source
+      if [[ "$yazi_works" == "false" ]]; then
+        echo "  Building from source (this may take several minutes)..."
+        if ! command -v cargo &>/dev/null; then
+          echo "📦 Installing Rust/cargo..."
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+          source ~/.cargo/env
+        fi
+        
+        if cargo install --locked yazi-fm; then
+          echo "✅ yazi built and installed successfully from source"
+          yazi_works=true
+        else
+          echo "❌ Failed to build yazi from source"
+          return 1
+        fi
+      fi
+    fi
   fi
   
   yazi
