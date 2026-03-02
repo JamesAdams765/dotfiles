@@ -427,51 +427,13 @@ alias mkdir='mkdir -p'
 
 # HTTP client / API testing tool
 html() {
-  # HTTP client / API tester - use curl (universally available)
-  _ensure curl \
-    "brew install curl" \
-    "sudo apt-get install -y curl"
+  # HTTP client / API tester - use httpie (user-friendly http tool)
+  _ensure http \
+    "brew install httpie" \
+    "pip3 install httpie"
   
-  if [[ $# -eq 0 ]]; then
-    echo "🌐 HTTP Client (curl)"
-    echo ""
-    read -r "method?HTTP Method (GET/POST/PUT/DELETE) [default: GET]: "
-    method="${method:-GET}"
-    read -r "url?URL: "
-    
-    if [[ -z "$url" ]]; then
-      echo "❌ URL required"
-      return 1
-    fi
-    
-    if [[ "$method" == "POST" ]] || [[ "$method" == "PUT" ]]; then
-      read -r "data?Data (optional): "
-      if [[ -n "$data" ]]; then
-        curl -X "$method" "$url" -H "Content-Type: application/json" -d "$data"
-      else
-        curl -X "$method" "$url"
-      fi
-    else
-      curl -X "$method" "$url"
-    fi
-  else
-    # Parse arguments: method url [data]
-    local method="${1:-GET}"
-    local url="$2"
-    local data="$3"
-    
-    if [[ -z "$url" ]]; then
-      echo "❌ URL required"
-      return 1
-    fi
-    
-    # Make the request
-    if [[ -n "$data" ]]; then
-      curl -X "$method" "$url" -H "Content-Type: application/json" -d "$data"
-    else
-      curl -X "$method" "$url"
-    fi
-  fi
+  # Open httpie in interactive mode
+  http --pretty=all "$@"
 }
 
 # Free system memory caches (Linux only)
