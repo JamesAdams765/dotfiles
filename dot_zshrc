@@ -325,11 +325,22 @@ _ensure() {
 
 # Code editor - VS Code or Code OSS
 edit-commands() {
-  # Edit shell configuration - use nano (available by default)
-  _ensure nano \
-    "brew install nano" \
-    "sudo apt-get install -y nano"
-  nano ~/.zshrc
+  # Edit shell configuration - try code, emacs, then nano
+  local editor
+  
+  if command -v code &>/dev/null; then
+    editor="code"
+  elif command -v emacs &>/dev/null; then
+    editor="emacs"
+  else
+    # Install emacs if neither code nor emacs exists
+    _ensure emacs \
+      "brew install emacs" \
+      "sudo apt-get install -y emacs"
+    editor="emacs"
+  fi
+  
+  $editor ~/.zshrc
 }
 
 # Weather - display current weather in San Antonio
