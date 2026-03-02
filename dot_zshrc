@@ -445,12 +445,18 @@ html() {
       echo "📦 Installing posting via pipx..."
       pipx install posting
     fi
+  elif command -v pip3 &>/dev/null; then
+    # Fall back to pip3 (common on Linux)
+    if ! command -v posting &>/dev/null; then
+      echo "📦 Installing posting via pip3..."
+      pip3 install --user posting
+    fi
   else
-    # Neither uv nor pipx available
-    echo "❌ Neither uv nor pipx is installed"
+    # No package manager available
+    echo "❌ No package manager found (uv, pipx, or pip3)"
     echo "Install one with:"
     echo "  macOS: brew install uv"
-    echo "  Linux: pip install uv"
+    echo "  Linux: apt install python3-pip (then pip3 install posting)"
     echo "  OR"
     echo "  macOS: brew install pipx"
     echo "  Linux: pip install pipx"
