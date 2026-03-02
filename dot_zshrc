@@ -437,11 +437,37 @@ html() {
   
   # Check if Python version is less than 3.11
   if [[ "$python_major_minor" < "3.11" ]]; then
-    echo "❌ Posting requires Python 3.11+ but you have Python $python_version"
-    echo "Options to fix:"
-    echo "  1. Upgrade Python: apt update && apt install python3.11"
-    echo "  2. Use a different HTTP client (e.g., httpie, curl)"
-    return 1
+    echo "⚠️  Posting requires Python 3.11+ but you have Python $python_version"
+    echo "🔧 Attempting to upgrade Python..."
+    
+    if command -v apt &>/dev/null; then
+      echo "📦 Running: sudo apt update && sudo apt install -y python3.11"
+      sudo apt update && sudo apt install -y python3.11
+      if [[ $? -eq 0 ]]; then
+        echo "✅ Python 3.11 installed successfully"
+        # Recursively call html to install posting with new Python
+        html "$@"
+        return $?
+      else
+        echo "❌ Failed to install Python 3.11"
+        return 1
+      fi
+    elif command -v brew &>/dev/null; then
+      echo "📦 Running: brew install python@3.11"
+      brew install python@3.11
+      if [[ $? -eq 0 ]]; then
+        echo "✅ Python 3.11 installed successfully"
+        html "$@"
+        return $?
+      else
+        echo "❌ Failed to install Python 3.11"
+        return 1
+      fi
+    else
+      echo "❌ No package manager found (apt or brew)"
+      echo "Please manually upgrade Python to 3.11+"
+      return 1
+    fi
   fi
   
   # Check which package manager to use for installation
