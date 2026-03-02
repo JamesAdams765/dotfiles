@@ -376,12 +376,12 @@ memory() {
   btop
 }
 
-# File browser (lf is a lightweight terminal file manager)
+# File browser (midnight commander is a classic terminal file manager)
 files() {
-  _ensure lf \
-    "brew install lf" \
-    "sudo apt-get install -y lf"
-  lf
+  _ensure mc \
+    "brew install midnight-commander" \
+    "sudo apt-get install -y mc"
+  mc
 }
 alias file='files'
 
