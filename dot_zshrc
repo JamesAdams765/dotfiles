@@ -376,115 +376,12 @@ memory() {
   btop
 }
 
-# File browser (yazi is a Rust-based file manager)
+# File browser (lf is a lightweight terminal file manager)
 files() {
-  # Detect system OS and architecture for yazi download
-  local os=$(uname -s)
-  local arch=$(uname -m)
-  local yazi_target
-  
-  # Determine the correct yazi binary target based on OS and architecture
-  case "$os" in
-    Darwin)
-      # macOS - use Homebrew (works for both Intel and Apple Silicon)
-      yazi_target="homebrew"
-      ;;
-    Linux)
-      # Linux - detect architecture and set appropriate target
-      case "$arch" in
-        x86_64)
-          yazi_target="x86_64-unknown-linux-gnu"
-          ;;
-        aarch64)
-          yazi_target="aarch64-unknown-linux-gnu"
-          ;;
-        arm64)
-          # Some systems report arm64 instead of aarch64
-          yazi_target="aarch64-unknown-linux-gnu"
-          ;;
-        armv7l)
-          yazi_target="armv7-unknown-linux-gnueabihf"
-          ;;
-        *)
-          echo "❌ Unsupported architecture on Linux: $arch"
-          return 1
-          ;;
-      esac
-      ;;
-    *)
-      echo "❌ Unsupported OS: $os"
-      return 1
-      ;;
-  esac
-  
-  # Check if yazi exists and works
-  local yazi_works=false
-  if command -v yazi &>/dev/null; then
-    local yazi_path=$(command -v yazi)
-    # Try to run yazi --version to verify it actually works
-    if "$yazi_path" --version &>/dev/null 2>&1; then
-      yazi_works=true
-    else
-      # Binary exists but doesn't work (likely glibc incompatibility)
-      echo "⚠️  Removing non-functional yazi binary at $yazi_path..."
-      sudo rm -f "$yazi_path" 2>/dev/null || rm -f "$yazi_path"
-    fi
-  fi
-  
-  # Only install if yazi doesn't work properly
-  if [[ "$yazi_works" == "false" ]]; then
-    if [[ "$yazi_target" == "homebrew" ]]; then
-      # macOS - use Homebrew
-      _ensure yazi \
-        "brew install yazi" \
-        "brew install yazi"
-    else
-      # Linux - try pre-compiled first, then fall back to cargo build
-      echo "📦 Installing yazi for $arch..."
-      echo "  Attempting pre-compiled binary..."
-      
-      local yazi_install_dir="/usr/local/bin"
-      local yazi_zip="/tmp/yazi.zip"
-      local yazi_unzip_dir="/tmp/yazi_inst"
-      
-      # Download and try pre-compiled binary
-      if curl -fsSL -Lo "$yazi_zip" "https://github.com/sxyazi/yazi/releases/latest/download/yazi-${yazi_target}.zip" && \
-         unzip -q "$yazi_zip" -d "$yazi_unzip_dir" && \
-         sudo install -m755 "$yazi_unzip_dir/yazi-${yazi_target}/yazi" "$yazi_install_dir/" && \
-         rm -rf "$yazi_zip" "$yazi_unzip_dir"; then
-        
-        # Test if the binary works
-        if "$yazi_install_dir/yazi" --version &>/dev/null 2>&1; then
-          echo "✅ Pre-compiled yazi installed successfully"
-          yazi_works=true
-        else
-          # Pre-compiled binary has compatibility issues (glibc mismatch)
-          echo "⚠️  Pre-compiled binary has compatibility issues (glibc version mismatch)"
-          sudo rm -f "$yazi_install_dir/yazi" 2>/dev/null || rm -f "$yazi_install_dir/yazi"
-        fi
-      fi
-      
-      # If pre-compiled didn't work, build from source
-      if [[ "$yazi_works" == "false" ]]; then
-        echo "  Building from source (this may take several minutes)..."
-        if ! command -v cargo &>/dev/null; then
-          echo "📦 Installing Rust/cargo..."
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
-          source ~/.cargo/env
-        fi
-        
-        if cargo install --force yazi-build; then
-          echo "✅ yazi built and installed successfully from source"
-          yazi_works=true
-        else
-          echo "❌ Failed to build yazi from source"
-          return 1
-        fi
-      fi
-    fi
-  fi
-  
-  yazi
+  _ensure lf \
+    "brew install lf" \
+    "sudo apt-get install -y lf"
+  lf
 }
 alias file='files'
 
