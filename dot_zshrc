@@ -427,65 +427,45 @@ alias mkdir='mkdir -p'
 
 # HTTP client / API testing tool
 html() {
-  # HTTP TUI client - resterm (REST client TUI)
-  # https://github.com/unkn0wn-root/resterm
-  local os=$(uname -s)
-  local arch=$(uname -m)
-  local resterm_target
+  # HTTP TUI client - posting (HTTP client TUI)
+  # https://github.com/darrenburns/posting
   
-  # Determine correct resterm binary target
-  case "$os" in
-    Darwin)
-      # macOS - use Homebrew
-      _ensure resterm \
-        "brew install resterm" \
-        "brew install resterm"
-      ;;
-    Linux)
-      # Linux - detect architecture
-      case "$arch" in
-        x86_64)
-          resterm_target="x86_64-unknown-linux-gnu"
-          ;;
-        aarch64|arm64)
-          resterm_target="aarch64-unknown-linux-gnu"
-          ;;
-        *)
-          echo "❌ Unsupported architecture: $arch"
-          return 1
-          ;;
-      esac
-      
-      # Check if resterm exists and works
-      if command -v resterm &>/dev/null && resterm --version &>/dev/null 2>&1; then
-        : # Already installed and working
-      else
-        # Download and install pre-compiled binary from GitHub releases
-        echo "📦 Installing resterm for $arch..."
-        local resterm_tar="/tmp/resterm.tar.gz"
-        local resterm_dir="/tmp/resterm_inst"
-        
-        if curl -fsSL -Lo "$resterm_tar" "https://github.com/unkn0wn-root/resterm/releases/latest/download/resterm-${resterm_target}.tar.gz" && \
-           mkdir -p "$resterm_dir" && \
-           tar -xzf "$resterm_tar" -C "$resterm_dir" && \
-           sudo install -m755 "$resterm_dir/resterm" /usr/local/bin/ && \
-           rm -rf "$resterm_tar" "$resterm_dir"; then
-          echo "✅ resterm installed successfully"
-        else
-          echo "❌ Failed to install resterm"
-          return 1
-        fi
-      fi
-      ;;
-    *)
-      echo "❌ Unsupported OS: $os"
-      return 1
-      ;;
-  esac
+  # Check which package manager to use for installation
+  local installer=""
   
-  # Launch resterm
-  command resterm "$@"
+  if command -v uv &>/dev/null; then
+    # Prefer uv if available
+    if ! command -v posting &>/dev/null; then
+      echo "📦 Installing posting via uv..."
+      uv tool install posting
+    fi
+  elif command -v pipx &>/dev/null; then
+    # Fall back to pipx
+    if ! command -v posting &>/dev/null; then
+      echo "📦 Installing posting via pipx..."
+      pipx install posting
+    fi
+  else
+    # Neither uv nor pipx available
+    echo "❌ Neither uv nor pipx is installed"
+    echo "Install one with:"
+    echo "  macOS: brew install uv"
+    echo "  Linux: pip install uv"
+    echo "  OR"
+    echo "  macOS: brew install pipx"
+    echo "  Linux: pip install pipx"
+    return 1
+  fi
+  
+  # Launch posting
+  if command -v posting &>/dev/null; then
+    command posting "$@"
+  else
+    echo "❌ Failed to install or find posting"
+    return 1
+  fi
 }
+
 
 # Free system memory caches (Linux only)
 freememory() {
