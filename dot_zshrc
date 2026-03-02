@@ -918,28 +918,49 @@ gemini() {
     return 1
   fi
   
-  # Try to ensure gemini is installed
-  if ! _ensure gemini \
-    "npm install -g @google/generative-ai || sudo npm install -g @google/generative-ai" \
-    "npm install -g @google/generative-ai || sudo npm install -g @google/generative-ai"; then
-    echo "❌ Failed to install Google Gemini"
-    echo "You can install it manually with:"
-    echo "  npm install -g @google/generative-ai"
-    echo "  OR"
-    echo "  sudo npm install -g @google/generative-ai"
-    return 1
-  fi
+  # Ensure jq is installed for JSON parsing
+  _ensure jq \
+    "brew install jq" \
+    "sudo apt-get install -y jq"
   
+  # Google Gemini CLI - prompt for query
   if [[ $# -eq 0 ]]; then
-    # No arguments - show interactive help
     echo "✨ Google Gemini AI Assistant"
     echo ""
-    echo "Usage: gemini [question or command]"
-    echo "Example: gemini 'What is the capital of France?'"
+    read -r "query?Ask Gemini: "
+    
+    if [[ -n "$query" ]]; then
+      # Use curl to call Google Gemini API (requires GOOGLE_API_KEY)
+      if [[ -z "$GOOGLE_API_KEY" ]]; then
+        echo "❌ GOOGLE_API_KEY environment variable not set"
+        echo ""
+        echo "Get your API key from: https://ai.google.dev/tutorials/setup"
+        echo "Then add to ~/.zshrc:"
+        echo "  export GOOGLE_API_KEY='your-api-key-here'"
+        return 1
+      fi
+      
+      # Call Google Gemini API
+      curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=$GOOGLE_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "{\"contents\":{\"parts\":[{\"text\":\"$query\"}]}}" | jq -r '.contents[0].parts[0].text' 2>/dev/null || \
+        echo "❌ Failed to get response from Gemini API"
+    fi
   else
     # With arguments - treat as prompt/command
-    echo "Running: gemini \"$*\""
-    command gemini "$*"
+    if [[ -z "$GOOGLE_API_KEY" ]]; then
+      echo "❌ GOOGLE_API_KEY environment variable not set"
+      echo ""
+      echo "Get your API key from: https://ai.google.dev/tutorials/setup"
+      echo "Then add to ~/.zshrc:"
+      echo "  export GOOGLE_API_KEY='your-api-key-here'"
+      return 1
+    fi
+    
+    curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=$GOOGLE_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d "{\"contents\":{\"parts\":[{\"text\":\"$*\"}]}}" | jq -r '.contents[0].parts[0].text' 2>/dev/null || \
+      echo "❌ Failed to get response from Gemini API"
   fi
 }
 
