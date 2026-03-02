@@ -427,10 +427,38 @@ alias mkdir='mkdir -p'
 
 # HTTP client / API testing tool
 html() {
-  _ensure posting \
-    "pip3 install posting" \
-    "pip3 install posting"
-  posting
+  # HTTP client / API tester - use curl (universally available)
+  _ensure curl \
+    "brew install curl" \
+    "sudo apt-get install -y curl"
+  
+  if [[ $# -eq 0 ]]; then
+    echo "🌐 HTTP Client (curl)"
+    echo ""
+    echo "Usage: html <method> <url> [data]"
+    echo ""
+    echo "Examples:"
+    echo "  html GET https://api.github.com/users/torvalds"
+    echo "  html POST https://httpbin.org/post '{\"key\":\"value\"}'"
+    echo "  html PUT https://httpbin.org/put data=value"
+  else
+    # Parse arguments: method url [data]
+    local method="${1:-GET}"
+    local url="$2"
+    local data="$3"
+    
+    if [[ -z "$url" ]]; then
+      echo "❌ URL required"
+      return 1
+    fi
+    
+    # Make the request
+    if [[ -n "$data" ]]; then
+      curl -X "$method" "$url" -H "Content-Type: application/json" -d "$data"
+    else
+      curl -X "$method" "$url"
+    fi
+  fi
 }
 
 # Free system memory caches (Linux only)
