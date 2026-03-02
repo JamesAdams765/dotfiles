@@ -432,8 +432,22 @@ html() {
     "brew install httpie" \
     "pip3 install httpie"
   
-  # Open httpie in interactive mode
-  http --pretty=all "$@"
+  if [[ $# -eq 0 ]]; then
+    # No arguments - prompt for URL
+    echo "🌐 HTTP Client (httpie)"
+    echo ""
+    read -r "url?Enter URL: "
+    
+    if [[ -z "$url" ]]; then
+      echo "❌ URL required"
+      return 1
+    fi
+    
+    http --pretty=all "$url"
+  else
+    # With arguments - pass directly to httpie
+    http --pretty=all "$@"
+  fi
 }
 
 # Free system memory caches (Linux only)
