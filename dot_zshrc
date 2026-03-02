@@ -427,50 +427,66 @@ alias mkdir='mkdir -p'
 
 # HTTP client / API testing tool
 html() {
-  # HTTP client / API tester - use httpie (user-friendly http tool)
-  _ensure http \
-    "brew install httpie" \
-    "pip3 install httpie"
+  # HTTP TUI client - ATAC (Awesome Terminal API Client)
+  # https://github.com/Julien-cpsn/ATAC
+  local os=$(uname -s)
+  local arch=$(uname -m)
+  local atac_target
   
-  if [[ $# -eq 0 ]]; then
-    # No arguments - show interactive menu
-    echo "🌐 HTTP Client (httpie)"
-    echo ""
-    echo "1. GET request"
-    echo "2. POST request"
-    echo "3. PUT request"
-    echo "4. DELETE request"
-    echo ""
-    read -r "choice?Select option (1-4): "
-    
-    case "$choice" in
-      1)
-        read -r "url?URL: "
-        http --pretty=all GET "$url"
-        ;;
-      2)
-        read -r "url?URL: "
-        read -r "data?JSON data: "
-        http --pretty=all POST "$url" < <(echo "$data")
-        ;;
-      3)
-        read -r "url?URL: "
-        read -r "data?JSON data: "
-        http --pretty=all PUT "$url" < <(echo "$data")
-        ;;
-      4)
-        read -r "url?URL: "
-        http --pretty=all DELETE "$url"
-        ;;
-      *)
-        echo "Invalid option"
-        return 1
-        ;;
-    esac
-  else
-    # With arguments - pass directly to httpie
-    http --pretty=all "$@"
-  fi
+  # Determine correct ATAC binary target
+  case "$os" in
+    Darwin)
+      # macOS - use Homebrew for both Intel and Apple Silicon
+      _ensure atac \
+        "brew install atac" \
+        "brew install atac"
+      ;;
+    Linux)
+      # Linux - detect architecture
+      case "$arch" in
+        x86_64)
+          atac_target="x86_64-unknown-linux-gnu"
+          ;;
+        aarch64|arm64)
+          atac_target="aarch64-unknown-linux-gnu"
+          ;;
+        armv7l)
+          atac_target="armv7-unknown-linux-gnueabihf"
+          ;;
+        *)
+          echo "❌ Unsupported architecture: $arch"
+          return 1
+          ;;
+      esac
+      
+      # Check if atac exists and works
+      if command -v atac &>/dev/null && atac --version &>/dev/null 2>&1; then
+        : # Already installed and working
+      else
+        # Download and install pre-compiled binary
+        echo "📦 Installing ATAC for $arch..."
+        local atac_zip="/tmp/atac.zip"
+        local atac_dir="/tmp/atac_inst"
+        
+        if curl -fsSL -Lo "$atac_zip" "https://github.com/Julien-cpsn/ATAC/releases/latest/download/atac-${atac_target}.zip" && \
+           unzip -q "$atac_zip" -d "$atac_dir" && \
+           sudo install -m755 "$atac_dir/atac" /usr/local/bin/ && \
+           rm -rf "$atac_zip" "$atac_dir"; then
+          echo "✅ ATAC installed successfully"
+        else
+          echo "❌ Failed to install ATAC"
+          return 1
+        fi
+      fi
+      ;;
+    *)
+      echo "❌ Unsupported OS: $os"
+      return 1
+      ;;
+  esac
+  
+  # Launch ATAC
+  command atac "$@"
 }
 
 # Free system memory caches (Linux only)
