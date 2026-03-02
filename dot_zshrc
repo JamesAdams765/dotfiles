@@ -325,12 +325,11 @@ _ensure() {
 
 # Code editor - VS Code or Code OSS
 edit-commands() {
-  _ensure code \
-    "brew install --cask visual-studio-code" \
-    "snap install code --classic || sudo apt-get install -y code"
-  if command -v code &>/dev/null; then
-    code ~/.zshrc
-  fi
+  # Edit shell configuration - use nano (available by default)
+  _ensure nano \
+    "brew install nano" \
+    "sudo apt-get install -y nano"
+  nano ~/.zshrc
 }
 
 # Weather - display current weather in San Antonio
