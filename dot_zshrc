@@ -468,7 +468,19 @@ gping() {
   _ensure fping \
     "brew install fping" \
     "sudo apt-get install -y fping"
-  command fping "$@"
+  
+  if [[ $# -eq 0 ]]; then
+    # No arguments - prompt for host
+    echo "📡 Ping a host"
+    echo ""
+    read -r "host?Enter host to ping (default: google.com): "
+    host="${host:-google.com}"
+    echo ""
+    command fping -c 4 "$host"
+  else
+    # With arguments - use directly
+    command fping "$@"
+  fi
 }
 
 # System information display
