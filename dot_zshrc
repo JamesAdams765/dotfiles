@@ -1021,14 +1021,15 @@ opencode() {
   local platform=""
   local opencode_bin=""
   local install_dir="$HOME/.local/bin"
+  local temp_dir="/tmp"
   
   if [[ "$OSTYPE" == "darwin"* ]]; then
     platform="macos"
-    opencode_bin="$install_dir/opencode"
   else
     platform="linux"
-    opencode_bin="$install_dir/opencode"
   fi
+  
+  opencode_bin="$install_dir/opencode"
   
   # Create bin directory if it doesn't exist
   mkdir -p "$install_dir"
@@ -1045,18 +1046,23 @@ opencode() {
     # Determine the correct download URL based on platform and architecture
     local arch=$(uname -m)
     local download_url=""
+    local archive_ext=""
     
     if [[ "$platform" == "macos" ]]; then
       if [[ "$arch" == "arm64" ]]; then
-        download_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-macos-arm64"
+        download_url="https://github.com/anomalyco/opencode/releases/download/v1.2.15/opencode-darwin-arm64.zip"
+        archive_ext="zip"
       else
-        download_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-macos-x86_64"
+        download_url="https://github.com/anomalyco/opencode/releases/download/v1.2.15/opencode-darwin-x64.zip"
+        archive_ext="zip"
       fi
     elif [[ "$platform" == "linux" ]]; then
       if [[ "$arch" == "aarch64" ]]; then
-        download_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-arm64"
-      else
-        download_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-x86_64"
+        download_url="https://github.com/anomalyco/opencode/releases/download/v1.2.15/opencode-linux-arm64.tar.gz"
+        archive_ext="tar.gz"
+      elif [[ "$arch" == "x86_64" ]]; then
+        download_url="https://github.com/anomalyco/opencode/releases/download/v1.2.15/opencode-linux-x64.tar.gz"
+        archive_ext="tar.gz"
       fi
     fi
     
@@ -1065,9 +1071,35 @@ opencode() {
       return 1
     fi
     
-    # Download OpenCode
-    if curl -fsSL "$download_url" -o "$opencode_bin"; then
+    # Download and extract OpenCode
+    local temp_archive="$temp_dir/opencode-download.$(date +%s)"
+    
+    if curl -fsSL "$download_url" -o "$temp_archive"; then
+      echo "📦 Extracting OpenCode..."
+      
+      if [[ "$archive_ext" == "tar.gz" ]]; then
+        tar -xzf "$temp_archive" -C "$temp_dir" 2>/dev/null
+        # Find the opencode binary in the extracted files
+        if [[ -f "$temp_dir/opencode" ]]; then
+          mv "$temp_dir/opencode" "$opencode_bin"
+        else
+          echo "❌ Could not find opencode binary in archive"
+          rm -f "$temp_archive"
+          return 1
+        fi
+      elif [[ "$archive_ext" == "zip" ]]; then
+        unzip -q "$temp_archive" -d "$temp_dir" 2>/dev/null
+        if [[ -f "$temp_dir/opencode" ]]; then
+          mv "$temp_dir/opencode" "$opencode_bin"
+        else
+          echo "❌ Could not find opencode binary in archive"
+          rm -f "$temp_archive"
+          return 1
+        fi
+      fi
+      
       chmod +x "$opencode_bin"
+      rm -f "$temp_archive"
       echo "✅ OpenCode installed successfully to $opencode_bin"
     else
       echo "❌ Failed to download OpenCode from:"
