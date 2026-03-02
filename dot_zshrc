@@ -427,36 +427,28 @@ alias mkdir='mkdir -p'
 
 # HTTP client / API testing tool
 html() {
-  # HTTP TUI client - ATAC (Awesome Terminal API Client)
-  # https://github.com/Julien-cpsn/ATAC
+  # HTTP TUI client - resterm (REST client TUI)
+  # https://github.com/unkn0wn-root/resterm
   local os=$(uname -s)
   local arch=$(uname -m)
-  local atac_target
+  local resterm_target
   
-  # Determine correct ATAC binary target
+  # Determine correct resterm binary target
   case "$os" in
     Darwin)
-      # macOS - use Homebrew for both Intel and Apple Silicon
-      _ensure atac \
-        "brew install atac" \
-        "brew install atac"
+      # macOS - use Homebrew
+      _ensure resterm \
+        "brew install resterm" \
+        "brew install resterm"
       ;;
     Linux)
       # Linux - detect architecture
       case "$arch" in
         x86_64)
-          atac_target="x86_64-unknown-linux-gnu"
+          resterm_target="x86_64-unknown-linux-gnu"
           ;;
         aarch64|arm64)
-          atac_target="aarch64-unknown-linux-gnu"
-          ;;
-        armv7l)
-          echo "⚠️  ATAC not available for ARMv7, falling back to lynx"
-          _ensure lynx \
-            "brew install lynx" \
-            "sudo apt-get install -y lynx"
-          command lynx "$@"
-          return 0
+          resterm_target="aarch64-unknown-linux-gnu"
           ;;
         *)
           echo "❌ Unsupported architecture: $arch"
@@ -464,24 +456,23 @@ html() {
           ;;
       esac
       
-      # Check if atac exists and works
-      if command -v atac &>/dev/null && atac --version &>/dev/null 2>&1; then
+      # Check if resterm exists and works
+      if command -v resterm &>/dev/null && resterm --version &>/dev/null 2>&1; then
         : # Already installed and working
       else
         # Download and install pre-compiled binary from GitHub releases
-        echo "📦 Installing ATAC for $arch..."
-        local atac_tar="/tmp/atac.tar.gz"
-        local atac_dir="/tmp/atac_inst"
-        local version="v0.23.0"
+        echo "📦 Installing resterm for $arch..."
+        local resterm_tar="/tmp/resterm.tar.gz"
+        local resterm_dir="/tmp/resterm_inst"
         
-        if curl -fsSL -Lo "$atac_tar" "https://github.com/Julien-cpsn/ATAC/releases/download/${version}/atac-${version}-${atac_target}.tar.gz" && \
-           mkdir -p "$atac_dir" && \
-           tar -xzf "$atac_tar" -C "$atac_dir" && \
-           sudo install -m755 "$atac_dir/atac" /usr/local/bin/ && \
-           rm -rf "$atac_tar" "$atac_dir"; then
-          echo "✅ ATAC installed successfully"
+        if curl -fsSL -Lo "$resterm_tar" "https://github.com/unkn0wn-root/resterm/releases/latest/download/resterm-${resterm_target}.tar.gz" && \
+           mkdir -p "$resterm_dir" && \
+           tar -xzf "$resterm_tar" -C "$resterm_dir" && \
+           sudo install -m755 "$resterm_dir/resterm" /usr/local/bin/ && \
+           rm -rf "$resterm_tar" "$resterm_dir"; then
+          echo "✅ resterm installed successfully"
         else
-          echo "❌ Failed to install ATAC"
+          echo "❌ Failed to install resterm"
           return 1
         fi
       fi
@@ -492,8 +483,8 @@ html() {
       ;;
   esac
   
-  # Launch ATAC
-  command atac "$@"
+  # Launch resterm
+  command resterm "$@"
 }
 
 # Free system memory caches (Linux only)
