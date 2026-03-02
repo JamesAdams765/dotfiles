@@ -435,12 +435,25 @@ html() {
   if [[ $# -eq 0 ]]; then
     echo "🌐 HTTP Client (curl)"
     echo ""
-    echo "Usage: html <method> <url> [data]"
-    echo ""
-    echo "Examples:"
-    echo "  html GET https://api.github.com/users/torvalds"
-    echo "  html POST https://httpbin.org/post '{\"key\":\"value\"}'"
-    echo "  html PUT https://httpbin.org/put data=value"
+    read -r "method?HTTP Method (GET/POST/PUT/DELETE) [default: GET]: "
+    method="${method:-GET}"
+    read -r "url?URL: "
+    
+    if [[ -z "$url" ]]; then
+      echo "❌ URL required"
+      return 1
+    fi
+    
+    if [[ "$method" == "POST" ]] || [[ "$method" == "PUT" ]]; then
+      read -r "data?Data (optional): "
+      if [[ -n "$data" ]]; then
+        curl -X "$method" "$url" -H "Content-Type: application/json" -d "$data"
+      else
+        curl -X "$method" "$url"
+      fi
+    else
+      curl -X "$method" "$url"
+    fi
   else
     # Parse arguments: method url [data]
     local method="${1:-GET}"
