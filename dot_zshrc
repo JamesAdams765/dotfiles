@@ -137,52 +137,53 @@ commands() {
   # If fzf is not available, fall back to script
   if command -v fzf &>/dev/null; then
     local cmd
-    cmd=$(printf "%-24s %s\n" \
-      "backup"                "📦  Backup/restore important files" \
-      "backlog"               "📋  Markdown kanban board (backlog.md)" \
-      "calendar"              "📅  Manage calendar events" \
-      "computer"              "🖥️   Show system info (neofetch)" \
-      "config"                "⚙️   Edit & reload .zshrc configuration" \
-      "copilot"               "🤖  GitHub Copilot AI assistant" \
-      "dotfiles"              "🔄  Sync dotfiles with GitHub (push + pull)" \
-      "dotfiles-force"        "☁️   Force overwrite local dotfiles from GitHub" \
-      "dotfiles-force-override-cloud"  "⬆️   Force push local dotfiles to GitHub" \
-      "edit-commands"         "✏️   Edit this .zshrc file" \
-      "email"                 "📧  Open email client (neomutt)" \
-      "file"                  "📁  Browse files (alias for files)" \
-      "files"                 "📂  Browse files with yazi" \
-      "freememory"            "🧹  Drop system memory caches" \
-      "gemini"                "✨  Google Gemini AI assistant" \
-      "gping"                 "📡  Graphical ping monitor" \
-      "health-check"          "🔍  Check installed tools & dependencies" \
-      "help"                  "❓  List all aliases" \
-      "html"                  "🌐  HTTP client / API tester (posting)" \
-      "journal"               "📓  Open a journal (select topic)" \
-      "journal-architecture"  "📓  Architecture journal" \
-      "journal-data-platform" "📓  Data platform journal" \
-      "journal-dev"           "📓  Dev journal" \
-      "journal-work"          "📓  Work journal" \
-      "lazyssh"               "🔑  SSH connection manager" \
-      "memory"                "📊  System resource monitor (btop)" \
-      "monitor"               "🔍  System resource monitor (htop)" \
-      "mutt"                  "📧  Open email client (neomutt)" \
-      "music"                 "🎵  Terminal music player" \
-      "network"               "🔌  Network monitor (bottom)" \
-      "notes"                 "📝  Quick note taking utility" \
-      "path"                  "📍  Show PATH directories" \
-      "profile"               "⏱️   Show shell startup time profile" \
-      "refresh"               "🔄  Reload shell configuration" \
-      "repos"                 "📦  Check git repos status" \
-      "rss"                   "📰  RSS feed reader (newsboat)" \
-      "storage"               "💾  Disk usage analyzer (ncdu)" \
-      "sync"                  "🔄  Quick alias for dotfiles" \
-      "sync-force"            "⚡  Quick alias for dotfiles --force" \
-      "tasks"                 "✅  Task manager (select project)" \
-      "update-apps"           "⬆️   Update all installed apps" \
-      "useful-aliases"        "⌨️   View useful shell aliases & navigation tricks" \
-      "weather"               "🌤️   Show current weather" \
-      "web"                   "🔗  Terminal web browser (lynx)" \
-       "z"                     "🚀  Jump to frecent directory (zoxide)" \
+     cmd=$(printf "%-24s %s\n" \
+       "backup"                "📦  Backup/restore important files" \
+       "backlog"               "📋  Markdown kanban board (backlog.md)" \
+       "calendar"              "📅  Manage calendar events" \
+       "computer"              "🖥️   Show system info (neofetch)" \
+       "config"                "⚙️   Edit & reload .zshrc configuration" \
+       "copilot"               "🤖  GitHub Copilot AI assistant" \
+       "dotfiles"              "🔄  Sync dotfiles with GitHub (push + pull)" \
+       "dotfiles-force"        "☁️   Force overwrite local dotfiles from GitHub" \
+       "dotfiles-force-override-cloud"  "⬆️   Force push local dotfiles to GitHub" \
+       "edit-commands"         "✏️   Edit this .zshrc file" \
+       "email"                 "📧  Open email client (neomutt)" \
+       "file"                  "📁  Browse files (alias for files)" \
+       "files"                 "📂  Browse files with yazi" \
+       "freememory"            "🧹  Drop system memory caches" \
+       "gemini"                "✨  Google Gemini AI assistant" \
+       "gping"                 "📡  Graphical ping monitor" \
+       "health-check"          "🔍  Check installed tools & dependencies" \
+       "help"                  "❓  List all aliases" \
+       "html"                  "🌐  HTTP client / API tester (posting)" \
+       "journal"               "📓  Open a journal (select topic)" \
+       "journal-architecture"  "📓  Architecture journal" \
+       "journal-data-platform" "📓  Data platform journal" \
+       "journal-dev"           "📓  Dev journal" \
+       "journal-work"          "📓  Work journal" \
+       "lazyssh"               "🔑  SSH connection manager" \
+       "memory"                "📊  System resource monitor (btop)" \
+       "monitor"               "🔍  System resource monitor (htop)" \
+       "mutt"                  "📧  Open email client (neomutt)" \
+       "music"                 "🎵  Terminal music player" \
+       "network"               "🔌  Network monitor (bottom)" \
+       "notes"                 "📝  Quick note taking utility" \
+       "opencode"              "🚀  AI-powered coding assistant (OpenCode)" \
+       "path"                  "📍  Show PATH directories" \
+       "profile"               "⏱️   Show shell startup time profile" \
+       "refresh"               "🔄  Reload shell configuration" \
+       "repos"                 "📦  Check git repos status" \
+       "rss"                   "📰  RSS feed reader (newsboat)" \
+       "storage"               "💾  Disk usage analyzer (ncdu)" \
+       "sync"                  "🔄  Quick alias for dotfiles" \
+       "sync-force"            "⚡  Quick alias for dotfiles --force" \
+       "tasks"                 "✅  Task manager (select project)" \
+       "update-apps"           "⬆️   Update all installed apps" \
+       "useful-aliases"        "⌨️   View useful shell aliases & navigation tricks" \
+       "weather"               "🌤️   Show current weather" \
+       "web"                   "🔗  Terminal web browser (lynx)" \
+        "z"                     "🚀  Jump to frecent directory (zoxide)" \
        | fzf --prompt="Select Command: " --height=30% --layout=reverse --border --no-sort)
     cmd=$(echo "$cmd" | awk '{print $1}')
     [[ -n "$cmd" ]] && eval "$cmd"
@@ -996,16 +997,94 @@ copilot() {
   if [[ $# -eq 0 ]]; then
     # No arguments - start copilot in interactive mode
     command copilot
+   else
+     # With arguments - treat as prompt text
+     echo "Running: copilot -p \"$*\""
+     command copilot -p "$*"
+   fi
+ }
+
+################################################################################
+# OPENCODE - AI-POWERED CODING ASSISTANT
+# Auto-downloads and launches OpenCode on all platforms
+################################################################################
+
+opencode() {
+  # Detect platform
+  local platform=""
+  local opencode_bin=""
+  local install_dir="$HOME/.local/bin"
+  
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    platform="macos"
+    opencode_bin="$install_dir/opencode"
   else
-    # With arguments - treat as prompt text
-    echo "Running: copilot -p \"$*\""
-    command copilot -p "$*"
+    platform="linux"
+    opencode_bin="$install_dir/opencode"
+  fi
+  
+  # Create bin directory if it doesn't exist
+  mkdir -p "$install_dir"
+  
+  # Check if OpenCode is already installed
+  if ! command -v opencode &>/dev/null; then
+    echo "📥 Downloading OpenCode..."
+    
+    # Determine the correct download URL based on platform and architecture
+    local arch=$(uname -m)
+    local download_url=""
+    
+    if [[ "$platform" == "macos" ]]; then
+      if [[ "$arch" == "arm64" ]]; then
+        download_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-macos-arm64"
+      else
+        download_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-macos-x86_64"
+      fi
+    elif [[ "$platform" == "linux" ]]; then
+      if [[ "$arch" == "aarch64" ]]; then
+        download_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-arm64"
+      else
+        download_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-x86_64"
+      fi
+    fi
+    
+    if [[ -z "$download_url" ]]; then
+      echo "❌ Unsupported platform: $platform ($arch)"
+      return 1
+    fi
+    
+    # Download OpenCode
+    if curl -fsSL "$download_url" -o "$opencode_bin"; then
+      chmod +x "$opencode_bin"
+      echo "✅ OpenCode installed successfully to $opencode_bin"
+      
+      # Add to PATH if not already there
+      if [[ ":$PATH:" != *":$install_dir:"* ]]; then
+        export PATH="$install_dir:$PATH"
+        echo "📌 Added $install_dir to PATH"
+      fi
+    else
+      echo "❌ Failed to download OpenCode from:"
+      echo "   $download_url"
+      echo ""
+      echo "You can try downloading manually from:"
+      echo "   https://github.com/anomalyco/opencode/releases"
+      return 1
+    fi
+  fi
+  
+  # Launch OpenCode
+  if command -v opencode &>/dev/null; then
+    command opencode "$@"
+  else
+    echo "❌ OpenCode not found after installation"
+    return 1
   fi
 }
 
-gemini() {
-  # Check if npm is available first
-  if ! command -v npm &>/dev/null; then
+ gemini() {
+   # Check if npm is available first
+   if ! command -v npm &>/dev/null; then
     echo "❌ npm is required for Google Gemini but is not installed"
     echo ""
     echo "Install it with:"
