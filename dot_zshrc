@@ -451,7 +451,12 @@ html() {
           atac_target="aarch64-unknown-linux-gnu"
           ;;
         armv7l)
-          atac_target="armv7-unknown-linux-gnueabihf"
+          echo "⚠️  ATAC not available for ARMv7, falling back to lynx"
+          _ensure lynx \
+            "brew install lynx" \
+            "sudo apt-get install -y lynx"
+          command lynx "$@"
+          return 0
           ;;
         *)
           echo "❌ Unsupported architecture: $arch"
@@ -463,15 +468,17 @@ html() {
       if command -v atac &>/dev/null && atac --version &>/dev/null 2>&1; then
         : # Already installed and working
       else
-        # Download and install pre-compiled binary
+        # Download and install pre-compiled binary from GitHub releases
         echo "📦 Installing ATAC for $arch..."
-        local atac_zip="/tmp/atac.zip"
+        local atac_tar="/tmp/atac.tar.gz"
         local atac_dir="/tmp/atac_inst"
+        local version="v0.23.0"
         
-        if curl -fsSL -Lo "$atac_zip" "https://github.com/Julien-cpsn/ATAC/releases/latest/download/atac-${atac_target}.zip" && \
-           unzip -q "$atac_zip" -d "$atac_dir" && \
+        if curl -fsSL -Lo "$atac_tar" "https://github.com/Julien-cpsn/ATAC/releases/download/${version}/atac-${version}-${atac_target}.tar.gz" && \
+           mkdir -p "$atac_dir" && \
+           tar -xzf "$atac_tar" -C "$atac_dir" && \
            sudo install -m755 "$atac_dir/atac" /usr/local/bin/ && \
-           rm -rf "$atac_zip" "$atac_dir"; then
+           rm -rf "$atac_tar" "$atac_dir"; then
           echo "✅ ATAC installed successfully"
         else
           echo "❌ Failed to install ATAC"
