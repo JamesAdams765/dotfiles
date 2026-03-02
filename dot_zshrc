@@ -435,10 +435,11 @@ freememory() {
 
 # Calendar management
 calendar() {
-  _ensure calcure \
-    "pipx install calcure" \
-    "pipx install calcure"
-  calcure
+  # Use the built-in 'cal' command (available on all Unix systems)
+  # Show current month with some padding
+  echo ""
+  cal
+  echo ""
 }
 
 # Network monitor
