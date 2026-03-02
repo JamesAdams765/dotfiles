@@ -429,6 +429,20 @@ alias mkdir='mkdir -p'
 html() {
   # HTTP TUI client - posting (HTTP client TUI)
   # https://github.com/darrenburns/posting
+  # Requires Python 3.11+
+  
+  # Check Python version first
+  local python_version=$(python3 --version 2>&1 | awk '{print $2}')
+  local python_major_minor=$(echo "$python_version" | cut -d. -f1,2)
+  
+  # Check if Python version is less than 3.11
+  if [[ "$python_major_minor" < "3.11" ]]; then
+    echo "❌ Posting requires Python 3.11+ but you have Python $python_version"
+    echo "Options to fix:"
+    echo "  1. Upgrade Python: apt update && apt install python3.11"
+    echo "  2. Use a different HTTP client (e.g., httpie, curl)"
+    return 1
+  fi
   
   # Check which package manager to use for installation
   local installer=""
@@ -455,11 +469,7 @@ html() {
     # No package manager available
     echo "❌ No package manager found (uv, pipx, or pip3)"
     echo "Install one with:"
-    echo "  macOS: brew install uv"
-    echo "  Linux: apt install python3-pip (then pip3 install posting)"
-    echo "  OR"
-    echo "  macOS: brew install pipx"
-    echo "  Linux: pip install pipx"
+    echo "  Linux: apt install python3-pip"
     return 1
   fi
   
