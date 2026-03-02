@@ -1033,8 +1033,13 @@ opencode() {
   # Create bin directory if it doesn't exist
   mkdir -p "$install_dir"
   
-  # Check if OpenCode is already installed
-  if ! command -v opencode &>/dev/null; then
+  # Add to PATH if not already there
+  if [[ ":$PATH:" != *":$install_dir:"* ]]; then
+    export PATH="$install_dir:$PATH"
+  fi
+  
+  # Check if OpenCode binary exists at the expected location
+  if [[ ! -f "$opencode_bin" ]]; then
     echo "📥 Downloading OpenCode..."
     
     # Determine the correct download URL based on platform and architecture
@@ -1064,12 +1069,6 @@ opencode() {
     if curl -fsSL "$download_url" -o "$opencode_bin"; then
       chmod +x "$opencode_bin"
       echo "✅ OpenCode installed successfully to $opencode_bin"
-      
-      # Add to PATH if not already there
-      if [[ ":$PATH:" != *":$install_dir:"* ]]; then
-        export PATH="$install_dir:$PATH"
-        echo "📌 Added $install_dir to PATH"
-      fi
     else
       echo "❌ Failed to download OpenCode from:"
       echo "   $download_url"
@@ -1080,11 +1079,11 @@ opencode() {
     fi
   fi
   
-  # Launch OpenCode
-  if command -v opencode &>/dev/null; then
-    command opencode "$@"
+  # Launch OpenCode using the direct path
+  if [[ -f "$opencode_bin" && -x "$opencode_bin" ]]; then
+    "$opencode_bin" "$@"
   else
-    echo "❌ OpenCode not found after installation"
+    echo "❌ OpenCode binary not found or not executable at $opencode_bin"
     return 1
   fi
 }
