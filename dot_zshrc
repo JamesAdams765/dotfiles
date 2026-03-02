@@ -433,17 +433,40 @@ html() {
     "pip3 install httpie"
   
   if [[ $# -eq 0 ]]; then
-    # No arguments - prompt for URL
+    # No arguments - show interactive menu
     echo "🌐 HTTP Client (httpie)"
     echo ""
-    read -r "url?Enter URL: "
+    echo "1. GET request"
+    echo "2. POST request"
+    echo "3. PUT request"
+    echo "4. DELETE request"
+    echo ""
+    read -r "choice?Select option (1-4): "
     
-    if [[ -z "$url" ]]; then
-      echo "❌ URL required"
-      return 1
-    fi
-    
-    http --pretty=all "$url"
+    case "$choice" in
+      1)
+        read -r "url?URL: "
+        http --pretty=all GET "$url"
+        ;;
+      2)
+        read -r "url?URL: "
+        read -r "data?JSON data: "
+        http --pretty=all POST "$url" < <(echo "$data")
+        ;;
+      3)
+        read -r "url?URL: "
+        read -r "data?JSON data: "
+        http --pretty=all PUT "$url" < <(echo "$data")
+        ;;
+      4)
+        read -r "url?URL: "
+        http --pretty=all DELETE "$url"
+        ;;
+      *)
+        echo "Invalid option"
+        return 1
+        ;;
+    esac
   else
     # With arguments - pass directly to httpie
     http --pretty=all "$@"
