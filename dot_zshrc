@@ -418,8 +418,8 @@ alias mkdir='mkdir -p'
 # HTTP client / API testing tool
 html() {
   _ensure posting \
-    "pipx install posting" \
-    "pipx install posting"
+    "pip3 install posting" \
+    "pip3 install posting"
   posting
 }
 
@@ -435,8 +435,10 @@ freememory() {
 
 # Calendar management
 calendar() {
-  # Use the built-in 'cal' command (available on all Unix systems)
-  # Show current month with some padding
+  # Use the 'cal' command (available on most systems, install if needed)
+  _ensure cal \
+    "brew install ncal" \
+    "sudo apt-get install -y bsdmainutils"
   echo ""
   cal
   echo ""
@@ -584,6 +586,11 @@ update-apps() {
 ################################################################################
 
 journal() {
+  # Ensure fzf is installed for menu
+  _ensure fzf \
+    "brew install fzf" \
+    "sudo apt-get install -y fzf"
+  
   local j
   j=$(printf "architecture\nwork\ndev\ndata-platform\n" \
     | fzf --prompt="Select Journal: " --height=~8 --layout=reverse --border --no-sort)
@@ -616,6 +623,11 @@ backlog() {
 
 # Task manager (uses geek-life with different database files for projects)
 tasks() {
+  # Ensure fzf is installed for menu
+  _ensure fzf \
+    "brew install fzf" \
+    "sudo apt-get install -y fzf"
+  
   local db
   db=$(printf "employees\nbroadway\nchurch\nfamily\n" \
     | fzf --prompt="Select Task DB: " --height=~8 --layout=reverse --border --no-sort)
