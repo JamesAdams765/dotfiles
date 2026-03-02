@@ -464,10 +464,11 @@ network() {
 
 # Graphical ping tool (requires Rust/cargo)
 gping() {
-  _ensure gping \
-    "brew install gping" \
-    "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install gping"
-  command gping "$@"
+  # Graphical ping - use fping (lighter weight alternative to gping)
+  _ensure fping \
+    "brew install fping" \
+    "sudo apt-get install -y fping"
+  command fping "$@"
 }
 
 # System information display
