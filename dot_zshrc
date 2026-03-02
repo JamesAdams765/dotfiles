@@ -182,11 +182,18 @@ commands() {
        "update-apps"           "⬆️   Update all installed apps" \
        "useful-aliases"        "⌨️   View useful shell aliases & navigation tricks" \
        "weather"               "🌤️   Show current weather" \
-       "web"                   "🔗  Terminal web browser (lynx)" \
-        "z"                     "🚀  Jump to frecent directory (zoxide)" \
-       | fzf --prompt="Select Command: " --height=30% --layout=reverse --border --no-sort)
-    cmd=$(echo "$cmd" | awk '{print $1}')
-    [[ -n "$cmd" ]] && eval "$cmd"
+        "web"                   "🔗  Terminal web browser (lynx)" \
+         "z"                     "🚀  Jump to frecent directory (zoxide)" \
+        | fzf --prompt="Select Command: " --height=30% --layout=reverse --border --no-sort)
+     cmd=$(echo "$cmd" | awk '{print $1}')
+     if [[ -n "$cmd" ]]; then
+       # Try to execute as a function first, then as a command
+       if declare -f "$cmd" &>/dev/null; then
+         "$cmd"
+       else
+         eval "$cmd"
+       fi
+     fi
   else
     # Fallback: show error and suggest alternatives
     echo -e "❌ Error: 'fzf' is required for the commands menu"
