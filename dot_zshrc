@@ -882,8 +882,8 @@ lazyssh() {
     "brew install jesseduffield/lazygit/lazyssh" \
     "gh release download -D /tmp -p '*linux*' jesseduffield/lazyssh; sudo mv /tmp/lazyssh /usr/local/bin/ && sudo chmod +x /usr/local/bin/lazyssh"
   
-  # Call the actual lazyssh binary (avoid function recursion)
-  command lazyssh "$@"
+  # Call the actual lazyssh binary directly using full path (avoid function recursion)
+  /opt/homebrew/bin/lazyssh "$@"
 }
 
 ################################################################################
