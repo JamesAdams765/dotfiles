@@ -560,7 +560,7 @@ calendar() {
 network() {
   _ensure btm \
     "brew install bottom" \
-    "sudo apt-get install -y bottom 2>/dev/null || { _a=\$(dpkg --print-architecture 2>/dev/null || echo amd64); _url=\$(curl -sf https://api.github.com/repos/ClementTsang/bottom/releases/latest | grep -o '\"browser_download_url\":\"[^\"]*'\"\$_a\"'.deb\"' | head -1 | cut -d'\"' -f4); [ -n \"\$_url\" ] && curl -fsSL \"\$_url\" -o /tmp/bottom.deb && sudo dpkg -i /tmp/bottom.deb && rm /tmp/bottom.deb || echo '❌ Could not find bottom .deb for arch: '\"\$_a\"; }"
+    "sudo apt-get install -y bottom 2>/dev/null || { _m=\$(uname -m); case \"\$_m\" in aarch64) _a=aarch64-unknown-linux-gnu;; armv*) _a=armv7-unknown-linux-gnueabihf;; *) _a=x86_64-unknown-linux-gnu;; esac; _v=\$(curl -sf -o /dev/null -w '%{url_effective}' -L https://github.com/ClementTsang/bottom/releases/latest 2>/dev/null | sed 's|.*/||'); [ -n \"\$_v\" ] && curl -fsSL \"https://github.com/ClementTsang/bottom/releases/download/\${_v}/bottom_\${_a}.tar.gz\" -o /tmp/btm.tar.gz && sudo tar -xzf /tmp/btm.tar.gz -C /usr/local/bin btm && rm /tmp/btm.tar.gz || echo '❌ Failed to install btm for '\"\$_m\"; }"
   btm
 }
 
