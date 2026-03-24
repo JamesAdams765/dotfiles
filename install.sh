@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# Install dotfiles on Linux (Raspberry Pi, Ubuntu, Debian, etc.)
+# Install dotfiles on macOS, Linux (Ubuntu, Debian, Raspberry Pi), and Windows (WSL/Git Bash)
 # Usage: curl -fsSL https://raw.githubusercontent.com/JamesAdams765/dotfiles/master/install.sh | bash
 ################################################################################
 
@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║        Installing Custom Shell Configuration (.zshrc)         ║${NC}"
-echo -e "${BLUE}║              for Raspberry Pi / Linux Systems                 ║${NC}"
+echo -e "${BLUE}║        for macOS, Windows, Ubuntu, Debian & Raspberry Pi      ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}\n"
 
 # Detect OS
@@ -30,62 +30,124 @@ detect_os() {
     else
       OS="linux"
     fi
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="macos"
+  elif [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    OS="windows"
   else
-    echo -e "${RED}❌ This script is for Linux (Raspberry Pi, Ubuntu, Debian, etc.)${NC}"
+    echo -e "${YELLOW}⚠️  Unknown OS: $OSTYPE. Attempting to proceed anyway...${NC}"
+    OS="unknown"
+  fi
+  echo "  ✓ Detected OS: $OS"
+}
+
+# Helper to check if a command exists
+has_cmd() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+# Helper to run commands with or without sudo
+run_cmd() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif has_cmd sudo; then
+    sudo "$@"
+  else
+    echo -e "${RED}❌ sudo not found and you are not root. Please install sudo or run as root.${NC}"
     exit 1
   fi
 }
 
 # Install dependencies
 install_dependencies() {
-  echo -e "${BLUE}📦 Installing dependencies...${NC}\n"
+  echo -e "\n${BLUE}📦 Installing dependencies...${NC}\n"
   
-  # Update package manager
-  echo "  → Updating package manager..."
-  if command -v apt-get &>/dev/null; then
-    sudo apt-get update -qq >/dev/null 2>&1 || true
-  fi
-  
-  # Install critical packages
-  local critical_packages=("curl" "git" "zsh")
-  for pkg in "${critical_packages[@]}"; do
-    if ! command -v "$pkg" &>/dev/null; then
-      echo "  → Installing $pkg..."
-      if ! sudo apt-get install -y -qq "$pkg" >/dev/null 2>&1; then
-        echo -e "${RED}❌ Failed to install $pkg - this is required${NC}"
-        exit 1
+  if has_cmd apt-get; then
+    echo "  → Updating apt package manager..."
+    run_cmd apt-get update -qq >/dev/null 2>&1 || true
+    
+    local critical_packages=("curl" "git" "zsh")
+    for pkg in "${critical_packages[@]}"; do
+      if ! has_cmd "$pkg"; then
+        echo "  → Installing $pkg..."
+        run_cmd apt-get install -y -qq "$pkg" >/dev/null 2>&1 || echo -e "${RED}❌ Failed to install $pkg - this is required${NC}"
+      else
+        echo "  ✓ $pkg already installed"
       fi
+    done
+    
+    local optional_packages=("fzf" "zoxide" "direnv" "build-essential" "nodejs" "npm" "wget" "tar" "gzip")
+    for pkg in "${optional_packages[@]}"; do
+      if ! has_cmd "$pkg" && ! dpkg -l 2>/dev/null | grep -q "^ii.*$pkg"; then
+        echo "  → Installing $pkg..."
+        run_cmd apt-get install -y -qq "$pkg" >/dev/null 2>&1 || echo -e "${YELLOW}  ⚠️  Could not install $pkg (non-critical, continuing)${NC}"
+      else
+        echo "  ✓ $pkg already installed"
+      fi
+    done
+
+  elif has_cmd brew; then
+    echo "  → Updating brew package manager..."
+    brew update -q >/dev/null 2>&1 || true
+
+    local critical_packages=("curl" "git" "zsh")
+    for pkg in "${critical_packages[@]}"; do
+      if ! has_cmd "$pkg"; then
+        echo "  → Installing $pkg..."
+        brew install "$pkg" -q >/dev/null 2>&1 || echo -e "${RED}❌ Failed to install $pkg - this is required${NC}"
+      else
+        echo "  ✓ $pkg already installed"
+      fi
+    done
+    
+    local optional_packages=("fzf" "zoxide" "direnv" "node" "wget")
+    for pkg in "${optional_packages[@]}"; do
+      if ! has_cmd "$pkg"; then
+        echo "  → Installing $pkg..."
+        brew install "$pkg" -q >/dev/null 2>&1 || echo -e "${YELLOW}  ⚠️  Could not install $pkg (non-critical, continuing)${NC}"
+      else
+        echo "  ✓ $pkg already installed"
+      fi
+    done
+
+  elif [[ "$OS" == "macos" ]]; then
+    echo "  → Homebrew not found. Attempting to install it..."
+    if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >/dev/null 2>&1; then
+      echo "  ✓ Homebrew installed successfully"
+      eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)" 2>/dev/null
+      install_dependencies # Retry with brew
     else
-      echo "  ✓ $pkg already installed"
+      echo -e "${RED}❌ Failed to install Homebrew. Please install it manually: https://brew.sh/${NC}"
+      exit 1
     fi
-  done
-  
-  # Install optional but recommended packages (auto-install system)
-  local optional_packages=("fzf" "build-essential" "nodejs" "npm" "wget" "tar" "gzip")
-  for pkg in "${optional_packages[@]}"; do
-    if ! command -v "$pkg" &>/dev/null && ! dpkg -l 2>/dev/null | grep -q "^ii.*$pkg"; then
-      echo "  → Installing $pkg..."
-      sudo apt-get install -y -qq "$pkg" >/dev/null 2>&1 || {
-        echo -e "${YELLOW}  ⚠️  Could not install $pkg (non-critical, continuing)${NC}"
-      }
-    else
-      echo "  ✓ $pkg already installed"
-    fi
-  done
+  elif has_cmd pacman; then
+    # Git Bash / MSYS / Arch
+    echo "  → Using pacman package manager..."
+    run_cmd pacman -Sy --noconfirm curl git zsh >/dev/null 2>&1 || true
+  else
+    echo -e "${YELLOW}  ⚠️  No supported package manager found (apt-get, brew, or pacman).${NC}"
+    echo "  → Please manually install curl, git, and zsh if they are missing."
+  fi
 }
 
 # Install chezmoi
 install_chezmoi() {
   echo -e "\n${BLUE}🔧 Installing chezmoi (dotfiles manager)...${NC}\n"
   
-  if command -v chezmoi &>/dev/null; then
+  if has_cmd chezmoi; then
     echo "  ✓ chezmoi already installed at $(which chezmoi)"
     return
   fi
   
+  if has_cmd brew && [[ "$OS" == "macos" ]]; then
+    echo "  → Installing chezmoi via Homebrew..."
+    brew install chezmoi -q >/dev/null 2>&1
+    echo "  ✓ chezmoi installed successfully"
+    return
+  fi
+
   mkdir -p "$HOME/.local/bin"
   
-  # Download and install chezmoi for ARM (Raspberry Pi)
   echo "  → Downloading chezmoi..."
   if sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" >/dev/null 2>&1; then
     echo "  ✓ chezmoi installed successfully"
@@ -94,7 +156,6 @@ install_chezmoi() {
     exit 1
   fi
   
-  # Add to PATH if not already there
   if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
     echo "  → Added ~/.local/bin to PATH"
@@ -105,20 +166,21 @@ install_chezmoi() {
 init_dotfiles() {
   echo -e "\n${BLUE}📥 Cloning and applying dotfiles...${NC}\n"
   
-  # Check if chezmoi repo already exists
+  local chezmoi_bin="chezmoi"
+  if ! has_cmd chezmoi; then
+    chezmoi_bin="$HOME/.local/bin/chezmoi"
+  fi
+
   if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
     echo "  → Dotfiles already initialized, pulling updates..."
-    cd "$HOME/.local/share/chezmoi"
-    git pull origin master >/dev/null 2>&1 || true
+    (cd "$HOME/.local/share/chezmoi" && git pull >/dev/null 2>&1 || true)
   else
     echo "  → Initializing dotfiles from GitHub..."
-    
-    # Try HTTPS first, then SSH
-    if "$HOME/.local/bin/chezmoi" init --apply https://github.com/JamesAdams765/dotfiles.git >/dev/null 2>&1; then
+    if "$chezmoi_bin" init --apply https://github.com/JamesAdams765/dotfiles.git >/dev/null 2>&1; then
       echo "  ✓ Dotfiles cloned and applied successfully (HTTPS)"
     else
       echo "  ✗ HTTPS failed, trying SSH..."
-      if "$HOME/.local/bin/chezmoi" init --apply git@github.com:JamesAdams765/dotfiles.git >/dev/null 2>&1; then
+      if "$chezmoi_bin" init --apply git@github.com:JamesAdams765/dotfiles.git >/dev/null 2>&1; then
         echo "  ✓ Dotfiles cloned and applied successfully (SSH)"
       else
         echo -e "${RED}❌ Failed to initialize dotfiles${NC}"
@@ -132,10 +194,16 @@ init_dotfiles() {
 apply_dotfiles() {
   echo -e "\n${BLUE}✨ Applying configuration files...${NC}\n"
   
-  if "$HOME/.local/bin/chezmoi" apply >/dev/null 2>&1; then
-    echo "  ✓ Configuration applied successfully"
+  local chezmoi_bin="chezmoi"
+  if ! has_cmd chezmoi; then
+    chezmoi_bin="$HOME/.local/bin/chezmoi"
+  fi
+
+  # Use --force to ensure non-interactive execution
+  if "$chezmoi_bin" apply --force; then
+    echo -e "\n  ✓ Configuration applied successfully"
   else
-    echo -e "${YELLOW}⚠️  Some files may not have been applied, continuing...${NC}"
+    echo -e "\n${YELLOW}⚠️  Some files may not have been applied, continuing...${NC}"
   fi
 }
 
@@ -154,7 +222,6 @@ install_oh_my_zsh() {
     fi
   fi
   
-  # Install zsh plugins
   install_zsh_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions.git"
   install_zsh_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
 }
@@ -199,27 +266,28 @@ install_powerlevel10k() {
 set_default_shell() {
   echo -e "\n${BLUE}🐚 Setting zsh as default shell...${NC}\n"
   
-  ZSH_PATH=$(which zsh)
+  ZSH_PATH=$(which zsh || true)
   
   if [ -z "$ZSH_PATH" ]; then
-    echo -e "${RED}❌ zsh not found${NC}"
-    exit 1
+    echo -e "${RED}❌ zsh not found. Please install zsh manually.${NC}"
+    return
   fi
   
-  # Check if zsh is already the default shell
+  # Update PATH for current session in case tools were just installed
+  export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
+
   if [ "$SHELL" == "$ZSH_PATH" ]; then
     echo "  ✓ zsh is already your default shell"
   else
     echo "  → Setting $ZSH_PATH as default shell..."
     
-    # Try chsh, handle permission issues gracefully
-    if chsh -s "$ZSH_PATH" >/dev/null 2>&1; then
+    if run_cmd chsh -s "$ZSH_PATH" "$USER" >/dev/null 2>&1; then
       echo "  ✓ Default shell set to zsh"
-    elif sudo chsh -s "$ZSH_PATH" "$USER" >/dev/null 2>&1; then
-      echo "  ✓ Default shell set to zsh (with sudo)"
+    elif run_cmd chsh -s "$ZSH_PATH" >/dev/null 2>&1; then
+      echo "  ✓ Default shell set to zsh"
     else
-      echo -e "${YELLOW}⚠️  Could not set default shell (you can do this manually)${NC}"
-      echo "     Run: chsh -s $(which zsh)"
+      echo -e "${YELLOW}⚠️  Could not set default shell automatically.${NC}"
+      echo "     Please run: chsh -s $ZSH_PATH"
     fi
   fi
 }
@@ -230,7 +298,6 @@ verify_installation() {
   
   local issues=0
   
-  # Check .zshrc
   if [ -f "$HOME/.zshrc" ]; then
     echo "  ✓ .zshrc installed"
   else
@@ -238,31 +305,26 @@ verify_installation() {
     issues=$((issues + 1))
   fi
   
-  # Check chezmoi
-  if command -v chezmoi &>/dev/null; then
+  if has_cmd chezmoi || [ -f "$HOME/.local/bin/chezmoi" ]; then
     echo "  ✓ chezmoi installed"
   else
     echo -e "${RED}  ❌ chezmoi not found${NC}"
     issues=$((issues + 1))
   fi
   
-  # Check zsh
-  if command -v zsh &>/dev/null; then
+  if has_cmd zsh; then
     echo "  ✓ zsh installed"
   else
     echo -e "${RED}  ❌ zsh not found${NC}"
     issues=$((issues + 1))
   fi
   
-  # Check fzf (important for commands function)
-  if command -v fzf &>/dev/null; then
-    echo "  ✓ fzf installed (commands menu will work)"
+  if has_cmd fzf; then
+    echo "  ✓ fzf installed"
   else
     echo -e "${YELLOW}  ⚠️  fzf not found (commands menu requires fzf)${NC}"
-    echo "     To install: sudo apt-get install -y fzf"
   fi
   
-  # Check Oh My Zsh
   if [ -d "$HOME/.oh-my-zsh" ]; then
     echo "  ✓ Oh My Zsh installed"
   else
@@ -280,18 +342,13 @@ verify_installation() {
 
 # Configure npm to use user-writable directory
 configure_npm() {
-  if ! command -v npm &>/dev/null; then
-    return 0  # npm not installed, skip
+  if ! has_cmd npm; then
+    return 0
   fi
   
   echo -e "\n${BLUE}⚙️  Configuring npm for user installations...${NC}\n"
-  
-  # Create user npm directory
   mkdir -p "$HOME/.npm-global/bin"
-  
-  # Configure npm to use this directory
   npm config set prefix "$HOME/.npm-global" >/dev/null 2>&1
-  
   echo "  ✓ npm configured (PATH set in shell config)"
 }
 
@@ -299,29 +356,30 @@ configure_npm() {
 install_optional_tools() {
   echo -e "\n${BLUE}📚 Installing optional tools (auto-installed on first use)...${NC}\n"
   
-  # Tools and their installation commands
-  # Format: "tool_name" "apt-get package"
   local tools=(
-    "btop:btop"                    # System resource monitor
-    "ncdu:ncdu"                    # Disk usage analyzer
-    "neofetch:neofetch"            # System info display
-    "neomutt:neomutt"              # Email client
-    "newsboat:newsboat"            # RSS feed reader
-    "lynx:lynx"                    # Terminal web browser
-    "htop:htop"                    # System monitor (fallback for monitor)
+    "btop" "ncdu" "fastfetch" "neomutt" "newsboat" "lynx" "htop"
   )
   
   echo "  Attempting to pre-install common optional tools:"
   
-  for tool_entry in "${tools[@]}"; do
-    IFS=':' read -r tool_name pkg_name <<< "$tool_entry"
-    
-    if ! command -v "$tool_name" &>/dev/null && ! dpkg -l 2>/dev/null | grep -q "^ii.*$pkg_name"; then
-      echo "  → Installing $tool_name..."
-      if sudo apt-get install -y -qq "$pkg_name" >/dev/null 2>&1; then
-        echo "    ✓ $tool_name installed"
-      else
-        echo -e "    ${YELLOW}⚠️  Could not install $tool_name (will try on first use)${NC}"
+  for tool_name in "${tools[@]}"; do
+    if ! has_cmd "$tool_name"; then
+      if has_cmd apt-get; then
+        echo "  → Installing $tool_name..."
+        run_cmd apt-get install -y -qq "$tool_name" >/dev/null 2>&1 && echo "    ✓ $tool_name installed" || {
+          # Fallback for fastfetch to neofetch
+          if [[ "$tool_name" == "fastfetch" ]]; then
+            run_cmd apt-get install -y -qq "neofetch" >/dev/null 2>&1 && echo "    ✓ neofetch installed (fallback for fastfetch)" || echo -e "    ${YELLOW}⚠️  Could not install $tool_name (nor neofetch fallback)${NC}"
+          else
+            echo -e "    ${YELLOW}⚠️  Could not install $tool_name${NC}"
+          fi
+        }
+      elif has_cmd brew; then
+        echo "  → Installing $tool_name..."
+        brew install "$tool_name" -q >/dev/null 2>&1 && echo "    ✓ $tool_name installed" || echo -e "    ${YELLOW}⚠️  Could not install $tool_name${NC}"
+      elif has_cmd pacman; then
+        echo "  → Installing $tool_name..."
+        run_cmd pacman -S --noconfirm "$tool_name" >/dev/null 2>&1 && echo "    ✓ $tool_name installed" || echo -e "    ${YELLOW}⚠️  Could not install $tool_name${NC}"
       fi
     else
       echo "  ✓ $tool_name already installed"
@@ -349,13 +407,6 @@ show_next_steps() {
   echo "📚 Documentation: https://github.com/JamesAdams765/dotfiles"
   echo "💬 For help, type: commands"
   echo ""
-  
-  # If fzf is not installed, show warning
-  if ! command -v fzf &>/dev/null; then
-    echo -e "${YELLOW}⚠️  NOTE: The 'commands' menu requires fzf${NC}"
-    echo "   Install it with: sudo apt-get install -y fzf"
-    echo ""
-  fi
 }
 
 # Main execution

@@ -53,8 +53,12 @@ if [[ ! -d "$ZSH" ]]; then
   fi
 fi
 
-# Theme selection (robbyrussell is a reliable, lightweight theme)
-ZSH_THEME="robbyrussell"
+# Theme selection (P10k is preferred, robbyrussell as fallback)
+if [[ -d "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" ]]; then
+  ZSH_THEME="powerlevel10k/powerlevel10k"
+else
+  ZSH_THEME="robbyrussell"
+fi
 
 # Oh My Zsh plugins - keep minimal for faster startup
 plugins=(
@@ -62,6 +66,9 @@ plugins=(
   zsh-autosuggestions    # Fish-like auto-completion suggestions
   zsh-syntax-highlighting # Syntax highlighting as you type
   web-search             # Search the web from terminal
+  fzf                    # Fuzzy finder integration
+  zoxide                 # Smarter cd
+  direnv                 # Environment variable management
 )
 
 # Load Oh My Zsh
@@ -92,7 +99,7 @@ autoload bashcompinit && bashcompinit
 health-check() {
   echo "🔍 Checking shell environment...\n"
   
-  local tools=("fzf" "curl" "git" "brew" "zoxide" "nvm" "cargo" "go" "node" "npm" "python3" "direnv")
+  local tools=("fzf" "curl" "git" "gh" "brew" "zoxide" "nvm" "cargo" "go" "node" "npm" "python3" "direnv")
   local missing=()
   
   echo "Installed Tools:"
@@ -553,45 +560,39 @@ calendar() {
 network() {
   _ensure btm \
     "brew install bottom" \
-    "snap install bottom"
+    "sudo apt-get install -y bottom || snap install bottom || cargo install bottom --locked"
   btm
 }
 
 # Graphical ping tool (requires Rust/cargo)
 gping() {
-  # Graphical ping - use fping (lighter weight alternative to gping)
-  _ensure fping \
-    "brew install fping" \
-    "sudo apt-get install -y fping"
+  _ensure gping \
+    "brew install gping" \
+    "cargo install gping"
+  command gping "$@"
+}
+
+# System information display (prefers fastfetch, falls back to neofetch)
+computer() {
+  if ! has_cmd fastfetch && ! has_cmd neofetch; then
+    _ensure fastfetch \
+      "brew install fastfetch" \
+      "sudo apt-get install -y fastfetch || sudo apt-get install -y neofetch"
+  fi
   
-  if [[ $# -eq 0 ]]; then
-    # No arguments - prompt for host
-    echo "📡 Ping a host"
-    echo ""
-    read -r "host?Enter host to ping (default: google.com): "
-    host="${host:-google.com}"
-    echo ""
-    command fping -c 4 "$host"
+  if has_cmd fastfetch; then
+    fastfetch "$@"
   else
-    # With arguments - use directly
-    command fping "$@"
+    neofetch "$@"
   fi
 }
 
-# System information display
-computer() {
-  _ensure neofetch \
-    "brew install neofetch" \
-    "sudo apt-get install -y neofetch"
-  neofetch
-}
-
-# Terminal music player (requires Rust/cargo)
+# Terminal music player (requires termusic)
 music() {
-  _ensure musictui \
-    "brew install musictui" \
+  _ensure termusic \
+    "brew install termusic" \
     "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path && source ~/.cargo/env && cargo install termusic"
-  musictui
+  termusic "$@"
 }
 
 ################################################################################
@@ -665,12 +666,18 @@ update-apps() {
 
   # Nerd Fonts (monospace fonts for terminals and IDEs)
   echo "\n📦 Updating JetBrainsMono Nerd Font..."
-  local nf_dir="$HOME/.local/share/fonts"
+  local nf_dir
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    nf_dir="$HOME/Library/Fonts"
+  else
+    nf_dir="$HOME/.local/share/fonts"
+  fi
   local nf_zip="/tmp/JetBrainsMono.zip"
   mkdir -p "$nf_dir"
   
   if curl -fsSL -o "$nf_zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"; then
-    unzip -o -q "$nf_zip" -d "$nf_dir/" && fc-cache -f "$nf_dir" && echo "  ✓ JetBrainsMono Nerd Font updated"
+    unzip -o -q "$nf_zip" -d "$nf_dir/" && echo "  ✓ JetBrainsMono Nerd Font updated"
+    [[ "$OSTYPE" != "darwin"* ]] && fc-cache -f "$nf_dir"
     rm -f "$nf_zip"
   else
     echo "  ⚠️  Download failed (check internet connection)"
@@ -921,10 +928,10 @@ repos() {
 lazyssh() {
   _ensure lazyssh \
     "brew install jesseduffield/lazygit/lazyssh" \
-    "gh release download -D /tmp -p '*linux*' jesseduffield/lazyssh; sudo mv /tmp/lazyssh /usr/local/bin/ && sudo chmod +x /usr/local/bin/lazyssh"
+    "curl -s https://api.github.com/repos/jesseduffield/lazyssh/releases/latest | grep -wo \"https.*linux-amd64.tar.gz\" | head -n 1 | xargs curl -L -o /tmp/lazyssh.tar.gz && tar -xzf /tmp/lazyssh.tar.gz -C /tmp && sudo mv /tmp/lazyssh /usr/local/bin/ && sudo chmod +x /usr/local/bin/lazyssh"
   
-  # Call the actual lazyssh binary directly using full path (avoid function recursion)
-  /opt/homebrew/bin/lazyssh "$@"
+  # Call the actual lazyssh binary directly (avoid function recursion)
+  command lazyssh "$@"
 }
 
 ################################################################################
