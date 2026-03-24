@@ -560,7 +560,7 @@ calendar() {
 network() {
   _ensure btm \
     "brew install bottom" \
-    "sudo apt-get install -y bottom || snap install bottom || cargo install bottom --locked"
+    "sudo apt-get install -y bottom 2>/dev/null || { _a=\$(dpkg --print-architecture 2>/dev/null || echo amd64); _url=\$(curl -sf https://api.github.com/repos/ClementTsang/bottom/releases/latest | grep -o '\"browser_download_url\":\"[^\"]*'\"\$_a\"'.deb\"' | head -1 | cut -d'\"' -f4); [ -n \"\$_url\" ] && curl -fsSL \"\$_url\" -o /tmp/bottom.deb && sudo dpkg -i /tmp/bottom.deb && rm /tmp/bottom.deb || echo '❌ Could not find bottom .deb for arch: '\"\$_a\"; }"
   btm
 }
 
